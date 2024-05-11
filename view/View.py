@@ -1,9 +1,14 @@
-import time
 import sys
+from colorama import init, Fore, Style
+
+# Initialize colorama for cross-platform colored text
+init(convert=True)
 
 class View:
     def print_banner(self):
-        banner = """
+
+        # The banner text
+        banner = f"""{Fore.RED}
   /$$$$$$  /$$$$$$$            /$$   /$$                         /$$                       /$$     /$$                    
  /$$__  $$| $$__  $$          | $$  / $$                        |__/                      | $$    |__/                    
 | $$  \ $$| $$  \ $$  /$$$$$$ |  $$/ $$/  /$$$$$$  /$$$$$$/$$$$  /$$ /$$$$$$$   /$$$$$$  /$$$$$$   /$$  /$$$$$$  /$$$$$$$ 
@@ -14,22 +19,22 @@ class View:
  \____ $$$|__/  |__/ \_______/|__/  |__/ \_______/|__/ |__/ |__/|__/|__/  |__/ \_______/   \___/  |__/ \______/ |__/  |__/
       \__/                                                                               
 
-                                Developed by @vitalele - 2024
+                                {Style.BRIGHT}{Fore.BLUE}Developed by @vitalele - 2024{Style.RESET_ALL}
         """
-        # Stampa i caratteri del banner uno per volta
+        # Print the characters of the banner one by one
         for char in banner:
-            # Stampa il carattere senza andare a capo
+            # Print the character without going to a new line
             sys.stdout.write(char)
             sys.stdout.flush()
             
-            # Aggiungi un breve ritardo per l'effetto macchina da scrivere
-            time.sleep(0.002)  # Puoi regolare la velocità del ritardo
+            # Add a short delay for the typewriter effect
+            # time.sleep(0.002)  # You can adjust the delay speed
 
     def show_menu(self):
-        menu = """
-        Seleziona un'opzione:
-        1. Scansiona un QR code
-        2. Genera un QR code
-        3. Esci
+        menu = f"""
+        --- Select an option ---
+        1. Scan a QR code
+        2. Generate a QR code
+        3. Exit
         """
         print(menu)
