@@ -1,0 +1,8 @@
+{
+    "api_keys": {
+      "google": "YOUR_API_KEY1",
+      "twitter": "YOUR_API_KEY",
+      "other": "YOUR_API_KEY"
+    }
+  }
+  

@@ -35,6 +35,13 @@ class View:
         --- Select an option ---
         1. Scan a QR code
         2. Generate a QR code
-        3. Exit
+        3. About the project
+        4. Exit
         """
         print(menu)
+
+    # TODO: change about the project text
+    def about_project(self):
+        print(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalele.")
+        print(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
+        print(f"Visit the GitHub repository for more information:{Style.RESET_ALL}")
