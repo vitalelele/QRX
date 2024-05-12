@@ -29,6 +29,7 @@ class Controller:
                 if self.scanner.scan_qr_code(file_path):
                     self.scanner.urlControl()
                 else:
+                    self.view.print_banner()
                     print(f"{Style.BRIGHT}{Fore.RED}Error scanning the QR code.\n{Style.RESET_ALL}")
             elif choice == "2":
                 data = input("Enter the text or URL for the QR code: ")
@@ -39,8 +40,10 @@ class Controller:
                 # is a feature for printing something about the project
                 self.view.about_project()
             elif choice == "4":
+                self.view.print_banner()
                 print("Exiting the tool. Goodbye!")
                 sys.exit(0)
             else:
+                self.view.print_banner()
                 print("Invalid choice. Please try again.")
 
