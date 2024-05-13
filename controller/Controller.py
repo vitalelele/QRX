@@ -17,7 +17,7 @@ class Controller:
         # self.api_manager = APIManager("static/config.json")
 
         # for debugging I made another config file that contains my API the debuConfig.json added to the .gitignore
-        self.api_manager = APIManager("static/debuConfig.json")
+        self.api_manager = APIManager("static/debugConfig.json")
 
 
     def run(self):
