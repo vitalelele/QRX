@@ -56,7 +56,8 @@ class View:
         1. Scan a QR code
         2. Generate a QR code
         3. About the project
-        4. Exit
+        4. Options
+        5. Exit
         """
         print(menu)
 
@@ -65,3 +66,11 @@ class View:
         print(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalele.")
         print(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
         print(f"Visit the GitHub repository for more information:{Style.RESET_ALL}")
+
+    def print_options(self):
+        options = """
+        Options:
+        1. Empty the 'qr_generated' folder
+        2. Return to the main menu
+        """
+        print(options)

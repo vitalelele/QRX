@@ -39,7 +39,21 @@ class Controller:
             elif choice == "3":
                 # is a feature for printing something about the project
                 self.view.about_project()
+            # Add the options menu
             elif choice == "4":
+                self.view.print_banner()
+                self.view.print_options()
+                option_choice = input("Enter your option: ")
+                if option_choice == "1":
+                    self.view.print_banner()
+                    self.generator.delete_generated_qr_codes()
+                elif option_choice == "2":
+                    self.run()
+                    break
+                else:
+                    print(f"{Fore.RED}Invalid option. Please try again.{Style.RESET_ALL}")
+                pass
+            elif choice == "5":
                 self.view.print_banner()
                 print("Exiting the tool. Goodbye!")
                 sys.exit(0)
