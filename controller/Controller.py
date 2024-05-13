@@ -10,6 +10,7 @@ class Controller:
         # Initialize colorama for cross-platform colored text
         init(convert=True)
         self.view = View()
+        # Initialize the QR scanner and generator
         self.scanner = QRScanner()
         self.generator = QRGenerator()
 
@@ -20,11 +21,15 @@ class Controller:
         self.api_manager = APIManager("static/debugConfig.json")
 
 
+
+
     def run(self):
         # TODO: Add a check for the API keys, if the user hasn't changed them from the default values
         self.api_manager.load_api_keys()
         # Print the banner
         self.view.print_banner()
+        # Reset the log file the first time the tool is run
+        self.scanner.reset_log_file()
         while True:
             self.view.show_menu()
             choice = input("Enter your choice (1-3): ")

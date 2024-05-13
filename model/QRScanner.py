@@ -1,7 +1,8 @@
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time
+import sys, time, requests, base64, os
+from model.APIManager import APIManager
 
 
 """
@@ -18,6 +19,13 @@ class QRScanner:
 
     def __init__(self):
         self.urlCode = None
+        self.log_file_path = "static\log\logError.txt"
+
+        # Initialize the API manager with the configuration file
+        # self.api_manager = APIManager("static/config.json")
+
+        # for debugging I made another config file that contains my API the debuConfig.json added to the .gitignore
+        self.api_manager = APIManager("static/debugConfig.json")
 
     def scan_qr_code(self, file_path):
         """
@@ -97,7 +105,12 @@ class QRScanner:
         # Check if the URL is a short URL, using the method checkShortUrl()
         is_short_url = self.checkShortUrl()
         print(f"{Style.BRIGHT}  URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}")
-
+        # Check if the URL is safe using the method checkVirusTotal()
+        is_safe, errorCode = self.checkVirusTotal()
+        if errorCode:
+            print(f"{Fore.RED}VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+        else:
+            print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if is_safe else Fore.RED}{'true' if is_safe else 'false'}{Style.RESET_ALL}")
 
         return
 
@@ -133,3 +146,74 @@ class QRScanner:
         # except requests.exceptions.RequestException as e:
         #     print("Error while checking the URL:", e)
         #     return False
+
+    def checkVirusTotal(self):
+        """
+        Checks the URL against the VirusTotal API for malicious content.
+        Refer to the VirusTotal API documentation for more information: https://docs.virustotal.com/reference/urls-votes-get
+    
+        Also see: https://docs.virustotal.com/reference/url#url-identifiers
+        Basically Base64 encode the URL and use it as the URL ID.
+
+        Returns:
+            bool: True if the URL is safe, False if it is flagged as malicious.
+            bool: True if there was an error while checking the URL with VirusTotal, False otherwise.
+        """
+        # Encode the URL using Base64, refer to the VirusTotal API documentation for more information
+        url_id = base64.urlsafe_b64encode(self.urlCode.encode()).decode().strip("=")
+
+        # Set the limit for the number of votes to retrieve
+        vote_limit = 10 # You can adjust this value as needed, more votes may take longer to process but provide more information
+
+        # Construct the URL for the VirusTotal API
+        url = f"https://www.virustotal.com/api/v3/urls/{url_id}/votes?limit={vote_limit}" 
+        # Set the headers with the API key
+        headers = {
+            "accept":"application/json",
+            "x-apikey": f"{self.api_manager.get_api_key('virustotal')}"
+            ""
+            }
+        # This URL return a list of Vote objects that contain the verdict of the URL
+        # Refer to: https://docs.virustotal.com/reference/vote-object
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            votes = response.json()["data"]
+            for vote in votes:
+                if vote["attributes"]["verdict"] != "harmless":
+                    return False, False
+            return True, False
+        else:
+            # print(f"{Fore.RED}Error checking the URL with VirusTotal: {response.text}{Style.RESET_ALL}")
+            # This basically means an error occurred while checking the URL with VirusTotal, maybne is not an URL
+            error_message = response.text
+            self.save_error_to_log("VirusTotal", error_message)
+            return False, True          
+
+    # Save an error message to the log file
+    def save_error_to_log(self, service_name, error_message):
+
+        """
+        Saves an error message to the log file for a specific service.
+
+        Args:
+            service_name (str): The name of the service where the error occurred.
+            error_message (str): The error message to save in the log file.
+
+        Returns:
+            None
+        """
+        if not os.path.exists("static"):
+            os.makedirs("static")  # Crea la cartella 'static' se non esiste
+
+        with open(self.log_file_path, "a") as log_file:
+            log_file.write(f"{service_name}: {error_message}\n")
+
+        # print(f"Error logged in {self.log_file_path}: {error_message}")
+
+        return
+
+    # Reset the log file, I need to reset only one time when the tool is run so I'll call in the Controller.py run() method
+    def reset_log_file(self):
+        if os.path.exists(self.log_file_path):
+            os.remove(self.log_file_path)
+            # print(f"{Fore.YELLOW}Log file reset successfully.{Style.RESET_ALL}")
