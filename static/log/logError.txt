@@ -1,6 +1,0 @@
-VirusTotal: {
-    "error": {
-        "code": "NotFoundError",
-        "message": "URL \"dGVzdDI\" not found"
-    }
-}

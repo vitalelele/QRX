@@ -47,6 +47,7 @@ class Controller:
                 self.generator.generate_qr_code(data)
             elif choice == "3":
                 # is a feature for printing something about the project
+                self.view.print_banner()
                 self.view.about_project()
             # Add the options menu
             elif choice == "4":
@@ -57,6 +58,10 @@ class Controller:
                     self.view.print_banner()
                     self.generator.delete_generated_qr_codes()
                 elif option_choice == "2":
+                    self.view.print_banner()
+                    # I added this feature for fun
+                    print(f"{Style.BRIGHT}{Fore.CYAN}Do you like more?{Style.RESET_ALL}")
+                elif option_choice == "3":
                     self.run()
                     break
                 else:

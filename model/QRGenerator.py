@@ -16,6 +16,10 @@ class QRGenerator:
             if use_custom_path == "Y":
                 # Ask the user to enter the desired path
                 file_path = input("Enter the save path for the generated QR code: ").strip()
+                # Check if the specified path is a folder
+                if not (self.is_safe_path(file_path) and os.path.isdir(file_path)):
+                    print(f"{Fore.RED}\nThe specified path is not a valid folder.{Style.RESET_ALL}")
+                    return
             else:
                 # Create the folder if it doesn't exist
                 if not os.path.exists(self.default_folder):
@@ -30,6 +34,7 @@ class QRGenerator:
             qr = qrcode.make(data)
             # Save the QR code to the specified path
             qr.save(file_path)
+
 
             # Print a success message
             print(f"{Fore.GREEN}QR code generated and saved at: {file_path}{Style.RESET_ALL}")
@@ -86,3 +91,19 @@ class QRGenerator:
         except Exception as e:
             # Print an error message
             print(f"{Fore.RED}Error during deletion: {e}{Style.RESET_ALL}")
+    def is_safe_path(self, path):
+        """
+        Checks if the specified path is safe and exists.
+
+        Args:
+            path (str): The path to check.
+
+        Returns:
+            bool: True if the path is safe and exists, False otherwise.
+        """
+        # Check if the path exists
+        if os.path.exists(path):
+            # Check if the path is absolute and does not point to sensitive directories
+            if os.path.isabs(path) and not ('..' in path or path.startswith('~')):
+                return True
+        return False

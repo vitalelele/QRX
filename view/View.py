@@ -1,13 +1,15 @@
-import sys, random
+import sys, random, shutil, re
 from colorama import init, Fore, Style
 
 # Initialize colorama for cross-platform colored text
 init(convert=True)
 
 class View:
+
+    # Print the banner
     def print_banner(self):
         try:
-                # Read the entire content of banners.txt as a single string
+            # Read the entire content of banners.txt as a single string
             with open("static/banners.txt", "r") as file:
                 banners_content = file.read()
                 # If there is content in the file
@@ -16,43 +18,24 @@ class View:
                     banners = banners_content.split('---')
                     # Select a random banner
                     random_banner = random.choice(banners)
-                    # Print the characters of the banner one by one
-                    print(f"[{Fore.RED}{random_banner}{Style.RESET_ALL}")
-                    print(f"{Fore.LIGHTWHITE_EX}                                             Developed by {Style.BRIGHT}@vitalelele - 2024{Style.RESET_ALL}")
-                    # for char in random_banner:
-                    #     # Print the character without going to a new line
-                    #     sys.stdout.write(char)
-                    #     sys.stdout.flush()      
-                    #     # Add a short delay for the typewriter effect
-                    #     # time.sleep(0.002)  # You can adjust the delay speed
+                    # Split the banner into lines
+                    banner_lines = random_banner.split('\n')
+                    for line in banner_lines:
+                        # Print each line centered
+                        self.print_centered(line)
+                    # Print an empty line after the banner
+                    print()
+                    # Print the developer info centered
+                    self.print_centered(f"{Style.BRIGHT}Developed by @vitalelele - 2024")
                 else:
                     print(f"{Fore.RED}No banners found in the file.{Style.RESET_ALL}")
         except FileNotFoundError:
-                print(f"{Fore.RED}File banners.txt not found.{Style.RESET_ALL}")
-
-    
-
-    #     # The banner text
-    #     f"""{Fore.RED}
-    #   /$$$$$$  /$$$$$$$            /$$   /$$                         /$$                       /$$     /$$                    
-    #  /$$__  $$| $$__  $$          | $$  / $$                        |__/                      | $$    |__/                    
-    # | $$  \ $$| $$  \ $$  /$$$$$$ |  $$/ $$/  /$$$$$$  /$$$$$$/$$$$  /$$ /$$$$$$$   /$$$$$$  /$$$$$$   /$$  /$$$$$$  /$$$$$$$ 
-    # | $$  | $$| $$$$$$$/ /$$__  $$ \  $$$$/  |____ s $$| $$_  $$_  $$| $$| $$__  $$ |____  $$|_  $$_/  | $$ /$$__  $$| $$__  $$
-    # | $$  | $$| $$__  $$| $$$$$$$$  >$$  $$   /$$$$$$$| $$ \ $$ \ $$| $$| $$  \ $$  /$$$$$$$  | $$    | $$| $$  \ $$| $$  \ $$
-    # | $$/$$ $$| $$  \ $$| $$_____/ /$$/\  $$ /$$__  $$| $$ | $$ | $$| $$| $$  | $$ /$$__  $$  | $$ /$$| $$| $$  | $$| $$  | $$
-    # |  $$$$$$/| $$  | $$|  $$$$$$$| $$  \ $$|  $$$$$$$| $$ | $$ | $$| $$| $$  | $$|  $$$$$$$  |  $$$$/| $$|  $$$$$$/| $$  | $$
-    #  \____ $$$|__/  |__/ \_______/|__/  |__/ \_______/|__/ |__/ |__/|__/|__/  |__/ \_______/   \___/  |__/ \______/ |__/  |__/
-    #       \__/                                                                               
-
-    #                 {Style.BRIGHT}{Fore.BLUE}Developed by @vitalele - 2024{Style.RESET_ALL}
-    #     """
-    
-
+            print(f"{Fore.RED}File banners.txt not found.{Style.RESET_ALL}")
 
 
     def show_menu(self):
         menu = f"""
-        --- Select an option ---
+        {Fore.MAGENTA}{Style.BRIGHT}--- Select an option ---{Style.RESET_ALL}
         1. Scan a QR code
         2. Generate a QR code
         3. About the project
@@ -63,14 +46,24 @@ class View:
 
     # TODO: change about the project text
     def about_project(self):
-        print(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalele.")
-        print(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
-        print(f"Visit the GitHub repository for more information:{Style.RESET_ALL}")
+        self.print_centered(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalele.")
+        self.print_centered(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
+        self.print_centered(f"Visit the GitHub repository for more information")
+        self.print_centered(f"https://github.com/vitalelele/QRX{Style.RESET_ALL}")
 
     def print_options(self):
         options = """
         Options:
-        1. Empty the 'qr_generated' folder
-        2. Return to the main menu
+        1. Empty the 'qr_generated' folder (delete all generated QR codes)
+        2. Change banner randomly :)
+        3. Return to the main menu 
         """
         print(options)
+
+    # Print a centered text
+    def print_centered(self, text):
+        # Rimuovi i colori ANSI prima di calcolare la lunghezza del testo
+        text_without_ansi = re.sub(r'\x1b\[[0-9;]*m', '', text)
+        terminal_width = shutil.get_terminal_size().columns
+        padding = (terminal_width - len(text_without_ansi)) // 2
+        print(f" " * padding + text)
