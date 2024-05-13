@@ -12,8 +12,12 @@ class Controller:
         self.view = View()
         self.scanner = QRScanner()
         self.generator = QRGenerator()
+
         # Initialize the API manager with the configuration file
-        self.api_manager = APIManager("static/config.json")
+        # self.api_manager = APIManager("static/config.json")
+
+        # for debugging I made another config file that contains my API the debuConfig.json added to the .gitignore
+        self.api_manager = APIManager("static/debuConfig.json")
 
 
     def run(self):

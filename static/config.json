@@ -1,8 +1,8 @@
 {
     "api_keys": {
-      "google": "12312312",
-      "twitter": "123123123",
-      "other": "12412341234"
+      "google": "YOUR_API_KEY",
+      "twitter": "YOUR_API_KEY",
+      "other": "YOUR_API_KEY"
     }
   }
   
