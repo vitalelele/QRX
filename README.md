@@ -74,7 +74,7 @@ For maximum security, we recommend setting up a virtual environment before insta
 3. **Proceed with the installation as mentioned in the Installation section.**
 
 ## Author
-This awesome tool was crafted with ❤️ by Antonio Vitale ([@vitalele](https://github.com/vitalele)). If you have any questions or suggestions, feel free to reach out!
+This awesome tool was crafted with ❤️ by Antonio Vitale ([@vitalele](https://github.com/vitalelele)). If you have any questions or suggestions, feel free to reach out!
 
 ## Contributing
 We welcome contributions from the community! If you'd like to contribute to QRX - QReXamination, please check out the [CONTRIBUTING](CONTRIBUTING.md) guidelines.
