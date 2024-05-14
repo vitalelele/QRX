@@ -1,4 +1,5 @@
-colorama==0.4.4
-Pillow==9.0.1
-pyzbar==0.1.8
-requests==2.26.0
+colorama==0.4.6
+pillow==10.3.0
+pyzbar==0.1.9
+qrcode==7.4.2
+requests
