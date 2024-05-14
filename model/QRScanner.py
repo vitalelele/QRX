@@ -4,7 +4,6 @@ from colorama import init, Fore, Style
 import sys, time, requests, base64, os
 from model.APIManager import APIManager
 
-
 """
 A class that represents a QR code scanner.
 Attributes:
@@ -19,7 +18,7 @@ class QRScanner:
 
     def __init__(self):
         self.urlCode = None
-        self.log_file_path = "static\log\logError.txt"
+        self.log_file_path = "static/log/logError.txt"
 
         # Initialize the API manager with the configuration file
         # self.api_manager = APIManager("static/config.json")
@@ -88,8 +87,8 @@ class QRScanner:
         sys.stdout.flush()  # Forza l'output immediato
         animation = "|/-\\"
         # in range(100) = 10 secondi
-        # remember to set to 100 when finished !!!!!!! 
-        for i in range(1):
+        # remember to set to 100 when finished !!!!!!!
+        for i in range(50):
             time.sleep(0.1)
             sys.stdout.write("\b" + animation[i % len(animation)])
             sys.stdout.flush()
@@ -101,7 +100,7 @@ class QRScanner:
 
         # Initialize colorama with convert=True
         init(convert=True)
-        
+
         # Check if the URL is a short URL, using the method checkShortUrl()
         is_short_url = self.checkShortUrl()
         print(f"{Style.BRIGHT}  URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}")
@@ -110,7 +109,10 @@ class QRScanner:
         if errorCode:
             print(f"{Fore.RED}VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}")
         else:
-            print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if is_safe else Fore.RED}{'true' if is_safe else 'false'}{Style.RESET_ALL}")
+            print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if is_safe else Fore.RED}{'safe' if is_safe else 'not safe'}{Style.RESET_ALL}")
+        
+        # more control coming soon :)
+        print(f"{Style.BRIGHT}  More control coming soon...{Style.RESET_ALL}")
 
         return
 
@@ -202,8 +204,8 @@ class QRScanner:
         Returns:
             None
         """
-        if not os.path.exists("static"):
-            os.makedirs("static")  # Crea la cartella 'static' se non esiste
+        if not os.path.exists("static/log"):
+            os.makedirs("static/log")  # Crea la cartella 'static' se non esiste
 
         with open(self.log_file_path, "a") as log_file:
             log_file.write(f"{service_name}: {error_message}\n")

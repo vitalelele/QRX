@@ -32,7 +32,7 @@ class Controller:
         self.scanner.reset_log_file()
         while True:
             self.view.show_menu()
-            choice = input("Enter your choice (1-3): ")
+            choice = input("Enter your choice: ")
             if choice == "1":
                 file_path = input(f"Enter the {Style.BRIGHT}{Fore.LIGHTYELLOW_EX}file path{Style.RESET_ALL} of the QR code: {Style.RESET_ALL}")
                 if self.scanner.scan_qr_code(file_path):

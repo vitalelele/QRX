@@ -6,7 +6,7 @@ init(convert=True)
 
 class QRGenerator:
     def __init__(self):
-        self.default_folder = "static/qr_generated"
+        self.default_folder = "static\qr_generated"
 
     def generate_qr_code(self, data):
         try:

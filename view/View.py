@@ -28,9 +28,9 @@ class View:
                     # Print the developer info centered
                     self.print_centered(f"{Style.BRIGHT}Developed by @vitalelele - 2024")
                 else:
-                    print(f"{Fore.RED}No banners found in the file.{Style.RESET_ALL}")
+                    self.print_centered(f"{Fore.RED}No banners found in the file.{Style.RESET_ALL}")
         except FileNotFoundError:
-            print(f"{Fore.RED}File banners.txt not found.{Style.RESET_ALL}")
+            self.print_centered(f"{Fore.RED}File banners.txt not found.{Style.RESET_ALL}")
 
 
     def show_menu(self):
