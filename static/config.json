@@ -1,7 +1,7 @@
 {
     "api_keys": {
-      "google": "YOUR_API_KEY",
-      "twitter": "YOUR_API_KEY",
+      "virustotal": "YOUR_API_KEY",
+      "ipqualityscore": "YOUR_API_KEY",
       "other": "YOUR_API_KEY"
     }
   }
