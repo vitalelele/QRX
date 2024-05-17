@@ -16,8 +16,7 @@ Welcome to QRX - QReXamination! This command-line tool is your ultimate companio
 
 ## Features
 - **Scan QR codes:** Easily scan QR codes from image files.
-- **Generate QR codes:** Create QR codes from text or URLs.
-- **URL analysis:** Check if a scanned URL is a short URL.
+-
 
 ## Installation
 1. **Clone the repository:**
@@ -36,6 +35,15 @@ Welcome to QRX - QReXamination! This command-line tool is your ultimate companio
    ```
 
    Make sure you have Python installed on your system.
+   Currently dependencies in use are:
+    ```
+    $ pip freeze 
+    colorama==0.4.6
+    pillow==10.3.0
+    pyzbar==0.1.9
+    qrcode==7.4.2
+    requests
+   ```
 
 ## Usage
 1. **Run the tool:**
@@ -45,9 +53,7 @@ Welcome to QRX - QReXamination! This command-line tool is your ultimate companio
 
 2. **Follow the on-screen instructions to choose an option:**
    - Scan a QR code
-   - Generate a QR code
-   - About the project
-   - Exit
+   - ...
 
 ## Customization
 ### Changing API Keys
