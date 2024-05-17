@@ -257,3 +257,9 @@ class QRScanner:
             error_message = response.text
             self.save_error_to_log("IpQualityScore", error_message)
             return False, True
+    
+    # TODO: Implement the checkURLscanIO() method
+    # https://urlscan.io/
+    # Refer to the follow documentatio: https://urlscan.io/docs/api/
+    def checkURLscanIO(self):
+        pass

@@ -2,7 +2,7 @@
     "api_keys": {
       "virustotal": "YOUR_API_KEY",
       "ipqualityscore": "YOUR_API_KEY",
-      "other": "YOUR_API_KEY"
+      "urlscanio": "YOUR_API_KEY"
     }
   }
   
