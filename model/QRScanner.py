@@ -1,7 +1,7 @@
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time, requests, base64, os
+import sys, time, requests, base64, os, urllib
 from model.APIManager import APIManager
 
 """
@@ -104,15 +104,24 @@ class QRScanner:
         # Check if the URL is a short URL, using the method checkShortUrl()
         is_short_url = self.checkShortUrl()
         print(f"{Style.BRIGHT}  URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}")
+        
         # Check if the URL is safe using the method checkVirusTotal()
-        is_safe, errorCode = self.checkVirusTotal()
+        virustotalcheck, errorCode = self.checkVirusTotal()
         if errorCode:
             print(f"{Fore.RED}VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}")
         else:
-            print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if is_safe else Fore.RED}{'safe' if is_safe else 'not safe'}{Style.RESET_ALL}")
+            print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if virustotalcheck else Fore.RED}{'safe' if virustotalcheck else 'not safe'}{Style.RESET_ALL}")
         
+        # Check if the URL is safe using the method checkIpQualityScore()
+        ipQualityCheck, errorCode = self.checkIpQualityScore()
+        if errorCode:
+            print(f"{Fore.RED}IPQualityScore API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+        else:
+            print(f"{Style.BRIGHT} IPQualityScore API: {Fore.GREEN if ipQualityCheck else Fore.RED}{'safe' if ipQualityCheck else 'not safe'}{Style.RESET_ALL}")
+
+
         # more control coming soon :)
-        print(f"{Style.BRIGHT}  More control coming soon...{Style.RESET_ALL}")
+        print(f"{Style.BRIGHT}\nMore control coming soon...{Style.RESET_ALL}")
 
         return
 
@@ -186,7 +195,7 @@ class QRScanner:
             return True, False
         else:
             # print(f"{Fore.RED}Error checking the URL with VirusTotal: {response.text}{Style.RESET_ALL}")
-            # This basically means an error occurred while checking the URL with VirusTotal, maybne is not an URL
+            # This basically means an error occurred while checking the URL with VirusTotal, maybe is not an URL
             error_message = response.text
             self.save_error_to_log("VirusTotal", error_message)
             return False, True          
@@ -219,3 +228,32 @@ class QRScanner:
         if os.path.exists(self.log_file_path):
             os.remove(self.log_file_path)
             # print(f"{Fore.YELLOW}Log file reset successfully.{Style.RESET_ALL}")
+
+    def checkIpQualityScore(self):
+        """
+        Checks the URL against the IpQualityScore API for malicious content.
+        Refer to the IpQualityScore API documentation for more information: https://www.ipqualityscore.com/documentation/malicious-url-scanner-api/overview
+    
+        Returns:
+            bool: True if the URL is safe, False if it is flagged as malicious.
+            bool: True if there was an error while checking the URL with IpQualityScore, False otherwise.
+        """
+        # Parse the urlCode to be used in the API request
+        # e.g., https://www.ipqualityscore.com/api/json/url/your-api-key/https%3A%2F%2Fwww.google.com
+        url = 'https://www.ipqualityscore.com/api/json/url/%s/%s' % (self.api_manager.get_api_key("ipqualityscore"), urllib.parse.quote_plus(self.urlCode))
+
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            print(data["unsafe"])
+            if data["unsafe"] == False:
+                # means that is safe
+                return True, False
+            else:
+                return False, False
+        else:
+            # This basically means an error occurred while checking the URL with IpQualityScore, maybe is not an URL
+            error_message = response.text
+            self.save_error_to_log("IpQualityScore", error_message)
+            return False, True
