@@ -49,7 +49,7 @@ class QRGenerator:
         # if the file already exists, append a counter to the file name
         # e.g., qr_code_01_01_2024_12_30_1.png, qr_code_01_01_2024_12_30_2.png, etc.
         now = datetime.datetime.now()
-        timestamp = now.strftime("%d_%m_%Y_%H_%M")
+        timestamp = now.strftime("%Y-%m-%d_%H_%M_%S")
         # Base file name format 
         base_name = "qr_code_" + timestamp + ".png"
         file_name = base_name

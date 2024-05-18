@@ -55,8 +55,9 @@ class View:
         options = """
         Options:
         1. Empty the 'qr_generated' folder (delete all generated QR codes)
-        2. Change banner randomly :)
-        3. Return to the main menu 
+        2. Empty the 'report' folder (delete all reports)
+        3. Change banner randomly :)
+        4. Return to the main menu 
         """
         print(options)
 
