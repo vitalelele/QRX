@@ -1,7 +1,7 @@
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time, requests, base64, os, urllib, json
+import sys, time, requests, base64, os, urllib, json, socket
 from model.APIManager import APIManager
 
 """
@@ -18,6 +18,7 @@ class QRScanner:
 
     def __init__(self):
         self.urlCode = None
+        self.urlIpAddr = None
         self.log_file_path = "static/log/logError.txt"
 
         # Initialize the API manager with the configuration file
@@ -42,8 +43,9 @@ class QRScanner:
             decoded_objects = decode(img)
             if decoded_objects:
                 for obj in decoded_objects:
+                    self.__setUrlCode(obj.data.decode())
+                    self.__setIpAddr()
                     self.print_qr_code_info(obj)
-                    self.urlCode = obj.data.decode()
                     return True
             else:
                 print(f"{Style.BRIGHT}{Fore.RED}No QR code found in the file.\n{Style.RESET_ALL}")
@@ -81,6 +83,7 @@ class QRScanner:
             f"QR code location: {Fore.CYAN}{obj.rect}\n"
             f"QR code polygon: {Fore.CYAN}{obj.polygon}\n"
             f"QR code raw data: {Fore.CYAN}{obj.data}\n"
+            f"IP address: {Fore.RED}{self.urlIpAddr}{Style.RESET_ALL}\n"
             f"{Style.BRIGHT}QR code analysis in progress...{Style.RESET_ALL}",
             end=""
         )
@@ -88,7 +91,7 @@ class QRScanner:
         animation = "|/-\\"
         # in range(100) = 10 secondi
         # remember to set to 100 when finished !!!!!!!
-        for i in range(50):
+        for i in range(5):
             time.sleep(0.1)
             sys.stdout.write("\b" + animation[i % len(animation)])
             sys.stdout.flush()
@@ -126,6 +129,39 @@ class QRScanner:
             print(f"{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}")
         else:
             print(f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+
+        # Check if the IP address is found in the AbuseIPDB database using the method checkAbuseIPDB()
+        error_code, checkAbuseIPDB_result = self.checkAbuseIPDB()
+        if error_code:
+            print(f"{Fore.RED} AbuseIPDB API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+        else:
+            print(f"{Style.BRIGHT} AbuseIPDB API: {Fore.GREEN}request success{Style.RESET_ALL}")
+            if checkAbuseIPDB_result:
+                # print(f"     {Style.BRIGHT}AbuseIPDB result:{Style.RESET_ALL}")
+                print(f"        _> Ip Address: {Fore.GREEN}{checkAbuseIPDB_result['ipAddress']}{Style.RESET_ALL}")
+                print(f"        _> Is Whitelisted: {Fore.RED if checkAbuseIPDB_result['isWhitelisted'] is None else Fore.GREEN}{checkAbuseIPDB_result['isWhitelisted']}{Style.RESET_ALL}")
+                print(f"        _> ISP: {Fore.RED if checkAbuseIPDB_result['isp'] is None else Fore.GREEN}{checkAbuseIPDB_result['isp']}{Style.RESET_ALL}")
+                print(f"        _> Domain: {Fore.RED if checkAbuseIPDB_result['domain'] is None else ''}{checkAbuseIPDB_result['domain']}{Style.RESET_ALL}")
+                print(f"        _> Is Tor: {Fore.RED if checkAbuseIPDB_result['isTor'] is False else ''}{checkAbuseIPDB_result['isTor']}{Style.RESET_ALL}")
+                print(f"        _> Total Reports: {Fore.GREEN if checkAbuseIPDB_result['totalReports'] < 15 else ''}{checkAbuseIPDB_result['totalReports']}{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}{Style.BRIGHT}Nessun dato disponibile.{Style.RESET_ALL}")
+
+        # Check if the 
+        error_code, checkIp2Location_result = self.checkIp2Location()
+        if error_code:
+            print(f"{Fore.RED} Ip2Location API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+        else:
+            print(f"{Style.BRIGHT} Ip2Location API: {Fore.GREEN}request success{Style.RESET_ALL}")
+            # print(f"     {Style.BRIGHT}Ip2Location result:{Style.RESET_ALL}")
+            print(f"        _> Country Code: {Fore.GREEN}{checkIp2Location_result['country_code']}{Style.RESET_ALL}")
+            print(f"        _> Country Name: {Fore.GREEN}{checkIp2Location_result['country_name']}{Style.RESET_ALL}")
+            print(f"        _> Region Name: {Fore.GREEN}{checkIp2Location_result['region_name']}{Style.RESET_ALL}")
+            print(f"        _> City Name: {Fore.GREEN}{checkIp2Location_result['city_name']}{Style.RESET_ALL}")
+            print(f"        _> Latitude: {Fore.GREEN}{checkIp2Location_result['latitude']}{Style.RESET_ALL}")
+            print(f"        _> Longitude: {Fore.GREEN}{checkIp2Location_result['longitude']}{Style.RESET_ALL}")
+            print(f"        _> Zip Code: {Fore.GREEN}{checkIp2Location_result['zip_code']}{Style.RESET_ALL}")
+            print(f"        _> Is Proxy: {Fore.RED if checkIp2Location_result['is_proxy'] is False else ''}{checkIp2Location_result['is_proxy']}{Style.RESET_ALL}")
 
 
         # more control coming soon :)
@@ -290,3 +326,104 @@ class QRScanner:
             error_message = response.text
             self.save_error_to_log("URLscanIO", error_message)
             return False
+
+    def checkAbuseIPDB(self):
+        """
+            Checks the AbuseIPDB for information about the IP address.
+            Refer to the AbuseIPDB API documentation for more information: https://docs.abuseipdb.com
+
+            Returns:
+                tuple: A tuple containing a boolean value indicating if the IP address is found in the AbuseIPDB database,
+                       and a dictionary containing the relevant information about the IP address if it is found.
+                       The dictionary contains the following keys:
+                       - ipAddress: The IP address being checked
+                       - isWhitelisted: Indicates if the IP address is whitelisted
+                       - isp: The Internet Service Provider of the IP address
+                       - domain: The domain associated with the IP address
+                       - isTor: Indicates if the IP address is a Tor exit node
+                       - totalReports: The total number of reports for the IP address
+        """
+        # Defining the api-endpoint
+        url = 'https://api.abuseipdb.com/api/v2/check'
+
+        querystring = {
+            'ipAddress': {self.getIpAddr()},
+            'maxAgeInDays': '90'
+        }
+
+        headers = {
+            'Accept': 'application/json',
+            'Key': self.api_manager.get_api_key("abuseipdb")
+        }
+
+        try:
+            response = requests.request(method='GET', url=url, headers=headers, params=querystring)
+            response.raise_for_status()  # Raise an exception for 4xx/5xx errors
+
+            response_data = response.json()
+            # Retrieve important data from the response
+            if 'data' in response_data:
+                data = response_data['data']
+                resultAbuseIPDB = {
+                    "ipAddress": data.get("ipAddress"),
+                    "isWhitelisted": data.get("isWhitelisted"),
+                    "isp": data.get("isp"),
+                    "domain": data.get("domain"),
+                    "isTor": data.get("isTor"),
+                    "totalReports": data.get("totalReports")
+                }
+                return False, resultAbuseIPDB
+            else:
+                return False
+
+        except requests.exceptions.RequestException as e:
+            print(f"Errore nella richiesta: {e}")
+            return False
+
+    def checkIp2Location(self):
+        # Definire il payload per la richiesta
+        payload = {'key': self.api_manager.get_api_key("ip2location"), 'ip': self.getIpAddr(), 'format': 'json'}
+        
+        # Effettuare la richiesta HTTP
+        response = requests.get('https://api.ip2location.io/', params=payload)
+        
+        # Controllare lo status della risposta
+        if response.status_code == 200:
+            # Se la richiesta va a buon fine, estrai le informazioni richieste
+            data = response.json()
+            result_return = {
+                "country_code": data["country_code"],
+                "country_name": data["country_name"],
+                "region_name": data["region_name"],
+                "city_name": data["city_name"],
+                "latitude": data["latitude"],
+                "longitude": data["longitude"],
+                "zip_code": data["zip_code"],
+                "is_proxy": data["is_proxy"]
+            }
+            return False, result_return
+        else:
+            # Se la richiesta non va a buon fine, ritorna False
+            return True
+
+    def getIpAddr(self):
+        return self.urlIpAddr
+    
+    # Set the IP address extracted from the URL
+    def __setIpAddr(self):
+        # Analyze the URL to extract only the domain
+        parsed_url = urllib.parse.urlparse(self.urlCode)
+
+        try:
+            # Get the IP address from the URL
+            ip_address = socket.gethostbyname(parsed_url.hostname)
+            self.urlIpAddr = ip_address
+        except socket.gaierror as e:
+            print(f"Error while getting the IP address: {Fore.RED}{e}{Style.RESET_ALL}")
+            self.urlIpAddr = None
+       
+        return
+    
+    def __setUrlCode(self, url):
+        self.urlCode = url
+        return
