@@ -46,7 +46,7 @@ class View:
 
     # TODO: change about the project text
     def about_project(self):
-        self.print_centered(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalele.")
+        self.print_centered(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalelele.")
         self.print_centered(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
         self.print_centered(f"Visit the GitHub repository for more information")
         self.print_centered(f"https://github.com/vitalelele/QRX{Style.RESET_ALL}")

@@ -1,7 +1,7 @@
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time, requests, base64, os, urllib
+import sys, time, requests, base64, os, urllib, json
 from model.APIManager import APIManager
 
 """
@@ -12,7 +12,7 @@ Methods:
     scan_qr_code(file_path): Scans a QR code from an image file.
     getUrlCode(): Returns the decoded URL from the QR code.
     checkShortUrl(): Checks if the decoded URL is a short URL.
-Developed by @vitalele - 2024
+Developed by @vitalelele - 2024
 """
 class QRScanner:
 
@@ -103,21 +103,29 @@ class QRScanner:
 
         # Check if the URL is a short URL, using the method checkShortUrl()
         is_short_url = self.checkShortUrl()
-        print(f"{Style.BRIGHT}  URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}")
+        print(f"{Style.BRIGHT} URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}")
         
         # Check if the URL is safe using the method checkVirusTotal()
-        virustotalcheck, errorCode = self.checkVirusTotal()
-        if errorCode:
-            print(f"{Fore.RED}VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+        virustotalcheck, error_code = self.checkVirusTotal()
+        if error_code:
+            print(f"{Fore.RED} VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}")
         else:
             print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if virustotalcheck else Fore.RED}{'safe' if virustotalcheck else 'not safe'}{Style.RESET_ALL}")
         
         # Check if the URL is safe using the method checkIpQualityScore()
-        ipQualityCheck, errorCode = self.checkIpQualityScore()
-        if errorCode:
-            print(f"{Fore.RED}IPQualityScore API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+        ipQualityCheck, error_code = self.checkIpQualityScore()
+        if error_code:
+            print(f"{Fore.RED} IPQualityScore API: error, see the log file in static/log for further information{Style.RESET_ALL}")
         else:
             print(f"{Style.BRIGHT} IPQualityScore API: {Fore.GREEN if ipQualityCheck else Fore.RED}{'safe' if ipQualityCheck else 'not safe'}{Style.RESET_ALL}")
+
+        # Check if the URL is safe using the method checkURLscanIO()
+        error_code, checkUrlScanIO = self.checkURLscanIO()
+        if error_code:
+            print(f"{Style.BRIGHT} URLscanIO API: {Fore.GREEN}request success{Style.RESET_ALL}")
+            print(f"{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}")
 
 
         # more control coming soon :)
@@ -246,7 +254,7 @@ class QRScanner:
 
         if response.status_code == 200:
             data = response.json()
-            print(data["unsafe"])
+            # print(data["unsafe"])
             if data["unsafe"] == False:
                 # means that is safe
                 return True, False
@@ -257,9 +265,28 @@ class QRScanner:
             error_message = response.text
             self.save_error_to_log("IpQualityScore", error_message)
             return False, True
-    
-    # TODO: Implement the checkURLscanIO() method
-    # https://urlscan.io/
-    # Refer to the follow documentatio: https://urlscan.io/docs/api/
+
     def checkURLscanIO(self):
-        pass
+        """
+        Sends a POST request to the urlscan.io API to scan a given URL.
+        Refer to the following documentation: https://urlscan.io/docs/api/
+
+        Returns:
+            bool: True if the request is successful, False otherwise.
+            dict: The result of the scan if the request is successful.
+
+        Raises:
+            None.
+
+        Example usage:
+            result, success = checkURLscanIO()
+        """
+        headers = {'API-Key': self.api_manager.get_api_key("urlscanio"), 'Content-Type':'application/json'}
+        data = {"url": self.urlCode, "visibility": "public"}
+        response = requests.post('https://urlscan.io/api/v1/scan/',headers=headers, data=json.dumps(data))
+        if response.status_code == 200:
+            return True, response.json()["result"]
+        else:
+            error_message = response.text
+            self.save_error_to_log("URLscanIO", error_message)
+            return False
