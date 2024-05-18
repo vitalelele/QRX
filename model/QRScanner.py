@@ -381,15 +381,23 @@ class QRScanner:
             return False
 
     def checkIp2Location(self):
-        # Definire il payload per la richiesta
+        """
+        Checks the IP location using the ip2location API.
+        Refer to the ip2location API documentation for more information: https://ip2location.io/documentation
+        
+        Returns:
+            tuple: A tuple containing a boolean value indicating the success of the request and a dictionary
+            containing the extracted information if the request is successful. If the request fails, only the boolean value is returned.
+        """
+        # Define the payload for the request
         payload = {'key': self.api_manager.get_api_key("ip2location"), 'ip': self.getIpAddr(), 'format': 'json'}
         
-        # Effettuare la richiesta HTTP
+        # Make the HTTP request
         response = requests.get('https://api.ip2location.io/', params=payload)
         
-        # Controllare lo status della risposta
+        # Check the response status
         if response.status_code == 200:
-            # Se la richiesta va a buon fine, estrai le informazioni richieste
+            # If the request is successful, extract the requested information
             data = response.json()
             result_return = {
                 "country_code": data["country_code"],
@@ -403,7 +411,7 @@ class QRScanner:
             }
             return False, result_return
         else:
-            # Se la richiesta non va a buon fine, ritorna False
+            # If the request fails, return False
             return True
 
     def getIpAddr(self):
