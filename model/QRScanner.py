@@ -1,7 +1,7 @@
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time, requests, base64, os, urllib, json, socket
+import sys, time, requests, base64, os, urllib, json, socket, datetime
 from model.APIManager import APIManager
 
 """
@@ -20,7 +20,8 @@ class QRScanner:
         self.urlCode = None
         self.urlIpAddr = None
         self.log_file_path = "static/log/logError.txt"
-
+        self.report_file_path = None
+        self.report_data = []
         # Initialize the API manager with the configuration file
         # self.api_manager = APIManager("static/config.json")
 
@@ -107,33 +108,42 @@ class QRScanner:
         # Check if the URL is a short URL, using the method checkShortUrl()
         is_short_url = self.checkShortUrl()
         print(f"{Style.BRIGHT} URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}")
+        self.generate_html_report("URL Short", not is_short_url, "The URL is a short URL" if is_short_url else "The URL is not a short URL")
         
         # Check if the URL is safe using the method checkVirusTotal()
         virustotalcheck, error_code = self.checkVirusTotal()
         if error_code:
             print(f"{Fore.RED} VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+            self.generate_html_report("VirusTotal", False, "Error while checking the URL with VirusTotal")
         else:
             print(f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if virustotalcheck else Fore.RED}{'safe' if virustotalcheck else 'not safe'}{Style.RESET_ALL}")
+            self.generate_html_report("VirusTotal", virustotalcheck, "The URL is safe" if virustotalcheck else "The URL is not safe")
         
         # Check if the URL is safe using the method checkIpQualityScore()
         ipQualityCheck, error_code = self.checkIpQualityScore()
         if error_code:
             print(f"{Fore.RED} IPQualityScore API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+            self.generate_html_report("IpQualityScore", False, "Error while checking the URL with IpQualityScore")
         else:
             print(f"{Style.BRIGHT} IPQualityScore API: {Fore.GREEN if ipQualityCheck else Fore.RED}{'safe' if ipQualityCheck else 'not safe'}{Style.RESET_ALL}")
+            self.generate_html_report("IpQualityScore", ipQualityCheck, "The URL is safe" if ipQualityCheck else "The URL is not safe")
 
         # Check if the URL is safe using the method checkURLscanIO()
         error_code, checkUrlScanIO = self.checkURLscanIO()
         if error_code:
+            print(f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+            self.generate_html_report("URLscanIO", False, "Error API, see the log file for further information.")
+        else:
             print(f"{Style.BRIGHT} URLscanIO API: {Fore.GREEN}request success{Style.RESET_ALL}")
             print(f"{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}")
-        else:
-            print(f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+            self.generate_html_report("URLscanIO", True, "The URL is safe, visit the URLscanIO website for further information: " + checkUrlScanIO)
+            
 
         # Check if the IP address is found in the AbuseIPDB database using the method checkAbuseIPDB()
         error_code, checkAbuseIPDB_result = self.checkAbuseIPDB()
         if error_code:
             print(f"{Fore.RED} AbuseIPDB API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+            self.generate_html_report("AbuseIPDB", False, "Error while checking the IP address with AbuseIPDB, see the log file for further information.")
         else:
             print(f"{Style.BRIGHT} AbuseIPDB API: {Fore.GREEN}request success{Style.RESET_ALL}")
             if checkAbuseIPDB_result:
@@ -144,13 +154,23 @@ class QRScanner:
                 print(f"        _> Domain: {Fore.RED if checkAbuseIPDB_result['domain'] is None else ''}{checkAbuseIPDB_result['domain']}{Style.RESET_ALL}")
                 print(f"        _> Is Tor: {Fore.RED if checkAbuseIPDB_result['isTor'] is False else ''}{checkAbuseIPDB_result['isTor']}{Style.RESET_ALL}")
                 print(f"        _> Total Reports: {Fore.GREEN if checkAbuseIPDB_result['totalReports'] < 15 else ''}{checkAbuseIPDB_result['totalReports']}{Style.RESET_ALL}")
+                # Generate the HTML report for the AbuseIPDB check, need to save into the report_data list
+                self.generate_html_report("AbuseIPDB", True, f"AbuseIPDB result:\n"
+                                                               f"    - Ip Address: {checkAbuseIPDB_result['ipAddress']}\n"
+                                                               f"    - Is Whitelisted: {checkAbuseIPDB_result['isWhitelisted']}\n"
+                                                               f"    - ISP: {checkAbuseIPDB_result['isp']}\n"
+                                                               f"    - Domain: {checkAbuseIPDB_result['domain']}\n"
+                                                               f"    - Is Tor: {checkAbuseIPDB_result['isTor']}\n"
+                                                               f"    - Total Reports: {checkAbuseIPDB_result['totalReports']}")
             else:
-                print(f"{Fore.RED}{Style.BRIGHT}Nessun dato disponibile.{Style.RESET_ALL}")
+                print(f"{Fore.RED}{Style.BRIGHT}No data available.{Style.RESET_ALL}")
+                self.generate_html_report("AbuseIPDB", False, "No data available for the IP address in the AbuseIPDB database.")
 
         # Check if the 
         error_code, checkIp2Location_result = self.checkIp2Location()
         if error_code:
             print(f"{Fore.RED} Ip2Location API: error, see the log file in static/log for further information{Style.RESET_ALL}")
+            self.generate_html_report("Ip2Location", False, "Error while checking the IP address with Ip2Location, see the log file for further information.")
         else:
             print(f"{Style.BRIGHT} Ip2Location API: {Fore.GREEN}request success{Style.RESET_ALL}")
             # print(f"     {Style.BRIGHT}Ip2Location result:{Style.RESET_ALL}")
@@ -162,10 +182,23 @@ class QRScanner:
             print(f"        _> Longitude: {Fore.GREEN}{checkIp2Location_result['longitude']}{Style.RESET_ALL}")
             print(f"        _> Zip Code: {Fore.GREEN}{checkIp2Location_result['zip_code']}{Style.RESET_ALL}")
             print(f"        _> Is Proxy: {Fore.RED if checkIp2Location_result['is_proxy'] is False else ''}{checkIp2Location_result['is_proxy']}{Style.RESET_ALL}")
-
+            self.generate_html_report("Ip2Location", True, f"Ip2Location result:\n"
+                                                                f"    - Country Code: {checkIp2Location_result['country_code']}\n"
+                                                                f"    - Country Name: {checkIp2Location_result['country_name']}\n"
+                                                                f"    - Region Name: {checkIp2Location_result['region_name']}\n"
+                                                                f"    - City Name: {checkIp2Location_result['city_name']}\n"
+                                                                f"    - Latitude: {checkIp2Location_result['latitude']}\n"
+                                                                f"    - Longitude: {checkIp2Location_result['longitude']}\n"
+                                                                f"    - Zip Code: {checkIp2Location_result['zip_code']}\n"
+                                                                f"    - Is Proxy: {checkIp2Location_result['is_proxy']}")
+        
 
         # more control coming soon :)
         print(f"{Style.BRIGHT}\nMore control coming soon...{Style.RESET_ALL}")
+
+        # Save the report to an HTML file
+        self.save_report()
+        print(f"{Style.BRIGHT}Report saved to {self.report_file_path}{Style.RESET_ALL}")
 
         return
 
@@ -321,11 +354,11 @@ class QRScanner:
         data = {"url": self.urlCode, "visibility": "public"}
         response = requests.post('https://urlscan.io/api/v1/scan/',headers=headers, data=json.dumps(data))
         if response.status_code == 200:
-            return True, response.json()["result"]
+            return False, response.json()["result"]
         else:
             error_message = response.text
             self.save_error_to_log("URLscanIO", error_message)
-            return False
+            return True
 
     def checkAbuseIPDB(self):
         """
@@ -434,4 +467,53 @@ class QRScanner:
     
     def __setUrlCode(self, url):
         self.urlCode = url
+        return
+    
+    def generate_html_report(self, service_name, status, message):
+        """
+        Generates a report entry for a specific service check.
+
+        Args:
+            service_name (str): The name of the service.
+            status (bool): The status of the check.
+            message (str): The result message of the check.
+
+        Returns:
+            None
+        """
+        status_str = "Success" if status else "Failure"
+        status_color = "green" if status else "red"
+        self.report_data.append(
+            f"<tr><td>{service_name}</td><td style='color:{status_color};'>{status_str}</td><td>{message}</td></tr>"
+        )
+        
+        # print(f"Report saved to {self.report_folder}")
+        return
+    
+    def save_report(self):
+            """
+            Saves the report data to an HTML file.
+
+            Returns:
+                None
+            """
+            if not os.path.exists("static/report"):
+                os.makedirs("static/report")
+
+            current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            report_file_path = f"static/report/report_{current_time}.html"
+
+            with open(report_file_path, "w") as report_file:
+                report_file.write("<html><head><title>QR Code Scan Report</title></head><body>")
+                report_file.write("<h1>QR Code Scan Report</h1>")
+                report_file.write("<table border='1'><tr><th>Service</th><th>Status</th><th>Message</th></tr>")
+                report_file.write("".join(self.report_data))
+                report_file.write("</table></body></html>")
+
+            self.__set_report_file_path(report_file_path)
+            # print(f"Report saved to {report_file_path}")
+
+
+    def __set_report_file_path(self, report_file_path):
+        self.report_file_path = report_file_path
         return
