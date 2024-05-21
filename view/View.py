@@ -1,10 +1,18 @@
 import sys, random, shutil, re
 from colorama import init, Fore, Style
 
-# Initialize colorama for cross-platform colored text
-init(convert=True)
-
 class View:
+
+    def __init__(self):
+        # Initialize colorama for cross-platform colored text
+        init(convert=True)
+
+        self.message_about_project = (
+            f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalelele. "
+            f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs. "
+            f"Visit the GitHub repository for more information "
+            f"https://github.com/vitalelele/QRX{Style.RESET_ALL}"
+                    )       
 
     # Print the banner
     def print_banner(self):
@@ -50,6 +58,7 @@ class View:
         self.print_centered(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
         self.print_centered(f"Visit the GitHub repository for more information")
         self.print_centered(f"https://github.com/vitalelele/QRX{Style.RESET_ALL}")
+        
 
     def print_options(self):
         options = """
@@ -68,3 +77,6 @@ class View:
         terminal_width = shutil.get_terminal_size().columns
         padding = (terminal_width - len(text_without_ansi)) // 2
         print(f" " * padding + text)
+    
+    def get_message_about_project(self):
+        return self.message_about_project
