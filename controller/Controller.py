@@ -29,10 +29,10 @@ class Controller:
         self.scanner.reset_log_file()
         while True:
             self.view.show_menu()
-            choice = input("Enter your choice: ")
+            choice = input(f"{Style.BRIGHT}{Fore.BLUE} [*]{Style.RESET_ALL} Enter your choice: ")
             # ----------------- Scan a QR code -----------------
             if choice == "1":
-                file_path = input(f"Enter the {Style.BRIGHT}{Fore.LIGHTYELLOW_EX}file path{Style.RESET_ALL} of the QR code: {Style.RESET_ALL}")
+                file_path = input(f"{Style.BRIGHT}{Fore.BLUE} [*]{Style.RESET_ALL} Enter the {Style.BRIGHT}{Fore.LIGHTYELLOW_EX}file path{Style.RESET_ALL} of the QR code: {Style.RESET_ALL}")
                 if self.scanner.scan_qr_code(file_path):
                     self.scanner.urlControl()
                 else:
@@ -40,7 +40,7 @@ class Controller:
                     print(f"{Style.BRIGHT}{Fore.RED}Error scanning the QR code.\n{Style.RESET_ALL}")
             # ----------------- Generate a QR code -----------------
             elif choice == "2":
-                data = input("Enter the text or URL for the QR code: ")
+                data = input(f"{Style.BRIGHT}{Fore.BLUE} [*]{Style.RESET_ALL} Enter the text or URL for the QR code: ")
                 # file_path = input("Enter the save path for the generated QR code: ")
                 # I want to always save it in the qr_generated folder
                 self.generator.generate_qr_code(data)
@@ -53,7 +53,7 @@ class Controller:
             elif choice == "4":
                 self.view.print_banner()
                 self.view.print_options()
-                option_choice = input("Enter your option: ")
+                option_choice = input(f"{Style.BRIGHT}{Fore.BLUE} [*]{Style.RESET_ALL} Enter your option: ")
                 if option_choice == "1":
                     self.view.print_banner()
                     self.generator.delete_generated_qr_codes()
@@ -63,19 +63,19 @@ class Controller:
                 elif option_choice == "3":
                     self.view.print_banner()
                     # I added this feature for fun
-                    print(f"{Style.BRIGHT}{Fore.CYAN}Do you like more?{Style.RESET_ALL}")
+                    print(f"{Style.BRIGHT}{Fore.CYAN};) Do you like more?{Style.RESET_ALL}")
                 elif option_choice == "4":
                     self.run()
                     break
                 else:
-                    print(f"{Fore.RED}Invalid option. Please try again.{Style.RESET_ALL}")
+                    print(f"{Style.BRIGHT}{Fore.RED} [!] {Style.RESET_ALL} {Fore.RED}Invalid option. Please try again.{Style.RESET_ALL}")
                 pass
             # ----------------- Exit -----------------
             elif choice == "5":
                 self.view.print_banner()
-                print("Exiting the tool. Goodbye!")
+                print(f"{Style.BRIGHT}{Fore.RED} [!] {Style.RESET_ALL}Exiting the tool. Goodbye!")
                 sys.exit(0)
             else:
                 self.view.print_banner()
-                print("Invalid choice. Please try again.")
+                print(f"{Style.BRIGHT}{Fore.RED} [!] {Style.RESET_ALL}Invalid choice. Please try again.")
 
