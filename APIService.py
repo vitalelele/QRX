@@ -24,7 +24,7 @@ async def scan_qr(qr_code: UploadFile = File(...)):
 
     try:
         file_contents = await qr_code.read()
-        file_path = f"static/qr_generated/{qr_code.filename}"
+        file_path = f"static/qr_generated/temp_upload/{qr_code.filename}"
         with open(file_path, "wb") as f:
             f.write(file_contents)
 
