@@ -6,6 +6,18 @@ from model.QRScanner import QRScanner
 app = FastAPI()
 qr_scanner = QRScanner()
 
+'''
+    This is the API service that will be used to interact with the QRX tool.
+    It will provide endpoints for scanning QR codes and generating QR codes.
+    The API service will be built using FastAPI.
+    Name of the serice is QRAPIX (QR API X)
+    The API service will have the following endpoints:
+    - /scan_qr: This endpoint will be used to scan a QR code.
+    ... more endpoints to be added later.
+
+    Developed by: Antonio Vitale
+    GitHub Repository: github.com/vitalelele/qrx
+'''
 
 # TODO: Create endpoints for QRX tool using FastAPI
 @app.get("/")
