@@ -5,6 +5,8 @@ from model.QRScanner import QRScanner
 
 app = FastAPI()
 qr_scanner = QRScanner()
+qr_scanner.is_api_call = True
+
 
 '''
     This is the API service that will be used to interact with the QRX tool.
@@ -36,13 +38,14 @@ async def scan_qr(qr_code: UploadFile = File(...)):
 
     try:
         file_contents = await qr_code.read()
-        file_path = f"static/qr_generated/temp_upload/{qr_code.filename}"
+        file_path = f"static/qr_generated/{qr_code.filename}"
         with open(file_path, "wb") as f:
             f.write(file_contents)
 
         qr_scanner.scan_qr_code(file_path)
-        qr_scanner.urlControl()
+        qr_scanner.urlScan_APIservice()
         result = qr_scanner.get_control_results()
         return {"result" : result}
+    
     except Exception as e:
         return {"error": str(e)}

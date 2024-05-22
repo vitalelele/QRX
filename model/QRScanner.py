@@ -1,7 +1,7 @@
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time, requests, base64, os, urllib, json, socket, datetime
+import sys, time, requests, base64, os, urllib, json, socket, datetime, re
 from model.APIManager import APIManager
 
 """
@@ -22,7 +22,8 @@ class QRScanner:
         self.log_file_path = "static/log/logError.txt"
         self.report_file_path = None
         self.report_data = []
-        self.control_results = []  # List to store the results of the control checks
+        self.control_results = {}  # Dictionary to store the results of the control checks
+        self.is_api_call = False
         # Initialize the API manager with the configuration file
         # self.api_manager = APIManager("static/config.json")
 
@@ -46,8 +47,13 @@ class QRScanner:
             if decoded_objects:
                 for obj in decoded_objects:
                     self.__setUrlCode(obj.data.decode())
-                    self.__setIpAddr()
-                    self.print_qr_code_info(obj)
+                    if not self.checkActionScheme():
+                        self.__setIpAddr()
+                    if self.is_api_call:
+                        self.control_results["QR Code info"] = { "result" : self.print_qr_code_info(obj)}
+                        return True
+                
+                    self.print_qr_code_info(obj)    
                     return True
             else:
                 print(f"{Style.BRIGHT}{Fore.RED}No QR code found in the file.\n{Style.RESET_ALL}")
@@ -78,17 +84,30 @@ class QRScanner:
         print_qr_code_info(qr_code)
         ```
         """
-        print(
-            f"{Style.BRIGHT}{Fore.GREEN}QR code decoded successfully!\n"
-            f"Decoded URL: {Fore.CYAN}{obj.data.decode()}\n"
-            f"QR code type: {Fore.CYAN}{obj.type}\n"
-            f"QR code location: {Fore.CYAN}{obj.rect}\n"
-            f"QR code polygon: {Fore.CYAN}{obj.polygon}\n"
-            f"QR code raw data: {Fore.CYAN}{obj.data}\n"
-            f"IP address: {Fore.RED}{self.urlIpAddr}{Style.RESET_ALL}\n"
-            f"{Style.BRIGHT}QR code analysis in progress...{Style.RESET_ALL}",
-            end=""
-        )
+        qr_info_message =   f"{Style.BRIGHT}{Fore.GREEN}QR code decoded successfully!\n"\
+                            f"Decoded URL: {Fore.CYAN}{obj.data.decode()}\n"\
+                            f"QR code type: {Fore.CYAN}{obj.type}\n"\
+                            f"QR code location: {Fore.CYAN}{obj.rect}\n"\
+                            f"QR code polygon: {Fore.CYAN}{obj.polygon}\n"\
+                            f"QR code raw data: {Fore.CYAN}{obj.data}\n"\
+                            f"IP address: {Fore.RED}{self.urlIpAddr}{Style.RESET_ALL}\n"\
+                            f"{Style.BRIGHT}QR code analysis in progress...{Style.RESET_ALL}"
+        
+        # Check if the API call is enabled
+        if self.is_api_call:
+            qr_info_message_api_format = {
+                            "decoded_successfully": True,
+                            "decoded_url": obj.data.decode(),
+                            "qr_code_type": obj.type,
+                            "qr_code_location": obj.rect,
+                            "qr_code_polygon": obj.polygon,
+                            "qr_code_raw_data": obj.data,
+                            "ip_address": self.urlIpAddr,
+                            "analysis_in_progress": True
+                            }
+            return qr_info_message_api_format
+    
+        print(qr_info_message, end="")
         sys.stdout.flush()  # Forza l'output immediato
         animation = "|/-\\"
         # in range(100) = 10 secondi
@@ -106,37 +125,50 @@ class QRScanner:
         # Initialize colorama with convert=True
         init(convert=True)
 
+        # First we need to verify if it's an action scheme
+        is_action_scheme = self.checkActionScheme()
+        action_scheme_result = f"{Style.BRIGHT}{Fore.YELLOW} [!] {Style.RESET_ALL}Action Scheme: {Fore.GREEN if is_action_scheme else Fore.RED}{'true' if is_action_scheme else 'false'}{Style.RESET_ALL}"
+        print(action_scheme_result)
+        if is_action_scheme:
+            print(f"{Fore.RED} [!] {Style.RESET_ALL}This QR code contains an action scheme.")
+            print(f"{Fore.RED} [!] No further analysis is required.{Style.RESET_ALL}")
+            print(f"{Fore.RED} [!] {Style.RESET_ALL}{Style.BRIGHT}{Fore.YELLOW}Be careful when opening a scheme, it could open some external services.{Style.RESET_ALL}")
+            self.control_results["Action Scheme"] = True
+            self.generate_html_report("Action Scheme", True, "This QR code contains an <b>action scheme</b>.")
+            # if it's an action scheme we don't need to continue with the control
+            return
+        
         # Check if the URL is a short URL, using the method checkShortUrl()
         is_short_url = self.checkShortUrl()
         short_url_result = f"{Style.BRIGHT} URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}"
         print(short_url_result)
-        self.control_results.append(short_url_result)
+        self.control_results["URL Short"] = is_short_url
         self.generate_html_report("URL Short", not is_short_url, "The URL is a <b>short URL</b>" if is_short_url else "The URL is <b>not a short URL</b>")
-        
+
         # Check if the URL is safe using the method checkVirusTotal()
         virustotalcheck, error_code = self.checkVirusTotal()
         if error_code:
             virust_total_result = f"{Fore.RED} VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}"
             print(virust_total_result)
-            self.control_results.append(virust_total_result)
+            self.control_results["VirusTotal"] = "error"
             self.generate_html_report("VirusTotal", False, "Error while checking the URL with VirusTotal")
         else:
             virust_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if virustotalcheck else Fore.RED}{'safe' if virustotalcheck else 'not safe'}{Style.RESET_ALL}"
             print(virust_total_result)
-            self.control_results.append(virust_total_result)
+            self.control_results["VirusTotal"] = "safe" if virustotalcheck else "not safe"
             self.generate_html_report("VirusTotal", virustotalcheck, "The URL is <b>safe</b>" if virustotalcheck else "The URL is <b>not safe</b>")
-        
+
         # Check if the URL is safe using the method checkIpQualityScore()
         ipQualityCheck, error_code = self.checkIpQualityScore()
         if error_code:
             ip_quality_score_result = f"{Fore.RED} IPQualityScore API: error, see the log file in static/log for further information{Style.RESET_ALL}"
             print(ip_quality_score_result)
-            self.control_results.append(ip_quality_score_result)
+            self.control_results["IPQualityScore"] = "error"
             self.generate_html_report("IpQualityScore", False, "Error while checking the URL with IpQualityScore")
         else:
             ip_quality_score_result = f"{Style.BRIGHT} IPQualityScore API: {Fore.GREEN if ipQualityCheck else Fore.RED}{'safe' if ipQualityCheck else 'not safe'}{Style.RESET_ALL}"
             print(ip_quality_score_result)
-            self.control_results.append(ip_quality_score_result)
+            self.control_results["IPQualityScore"] = "safe" if ipQualityCheck else "not safe"
             self.generate_html_report("IPQualityScore", ipQualityCheck, "The URL is <b>safe</b>" if ipQualityCheck else "The URL is <b>not safe</b>")
 
         # Check if the URL is safe using the method checkURLscanIO()
@@ -144,21 +176,20 @@ class QRScanner:
         if error_code:
             check_urlscanio_result = f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}"
             print(check_urlscanio_result)
-            self.control_results.append(check_urlscanio_result)
+            self.control_results["URLscanIO"] = "error"
             self.generate_html_report("URLscanIO", False, "Error API, see the log file for further information.")
         else:
             check_urlscanio_result = f"{Style.BRIGHT} URLscanIO API: {Fore.GREEN}request success{Style.RESET_ALL}\n{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}"
             print(check_urlscanio_result)
-            self.control_results.append(check_urlscanio_result)
+            self.control_results["URLscanIO"] = checkUrlScanIO
             self.generate_html_report("URLscanIO", True, f"Visit the <b><a href='{checkUrlScanIO}' target='_blank'>URLscanIO</b></a> website for further information: " + checkUrlScanIO)
-            
 
         # Check if the IP address is found in the AbuseIPDB database using the method checkAbuseIPDB()
         error_code, checkAbuseIPDB_result = self.checkAbuseIPDB()
         if error_code:
             print_checkAbuseIPDB = f"{Fore.RED} AbuseIPDB API: error, see the log file in static/log for further information{Style.RESET_ALL}"
             print(print_checkAbuseIPDB)
-            self.control_results.append(print_checkAbuseIPDB)
+            self.control_results["AbuseIPDB"] = "error"
             self.generate_html_report("AbuseIPDB", False, "Error while checking the IP address with AbuseIPDB, see the log file for further information.")
         else:
             print(f"{Style.BRIGHT} AbuseIPDB API: {Fore.GREEN}request success{Style.RESET_ALL}")
@@ -171,27 +202,27 @@ class QRScanner:
                                         f"        _> Is Tor: {Fore.RED if checkAbuseIPDB_result['isTor'] is False else ''}{checkAbuseIPDB_result['isTor']}{Style.RESET_ALL}\n" \
                                         f"        _> Total Reports: {Fore.GREEN if checkAbuseIPDB_result['totalReports'] < 15 else ''}{checkAbuseIPDB_result['totalReports']}{Style.RESET_ALL}"
                 print(print_checkAbuseIPDB)
-                self.control_results.append(print_checkAbuseIPDB)
+                self.control_results["AbuseIPDB"] = checkAbuseIPDB_result
                 # Generate the HTML report for the AbuseIPDB check, need to save into the report_data list
                 self.generate_html_report("AbuseIPDB", True, f"<b><u>AbuseIPDB result:</b></u><br>"
-                                                               f"    - Ip Address: <i>{checkAbuseIPDB_result['ipAddress']}</i><br>"
-                                                               f"    - Is Whitelisted: <i>{checkAbuseIPDB_result['isWhitelisted']}</i><br>"
-                                                               f"    - ISP: <i>{checkAbuseIPDB_result['isp']}</i><br>"
-                                                               f"    - Domain: <i>{checkAbuseIPDB_result['domain']}</i><br>"
-                                                               f"    - Is Tor: <i>{checkAbuseIPDB_result['isTor']}</i><br>"
-                                                               f"    - Total Reports: <i>{checkAbuseIPDB_result['totalReports']}")
+                                                            f"    - Ip Address: <i>{checkAbuseIPDB_result['ipAddress']}</i><br>"
+                                                            f"    - Is Whitelisted: <i>{checkAbuseIPDB_result['isWhitelisted']}</i><br>"
+                                                            f"    - ISP: <i>{checkAbuseIPDB_result['isp']}</i><br>"
+                                                            f"    - Domain: <i>{checkAbuseIPDB_result['domain']}</i><br>"
+                                                            f"    - Is Tor: <i>{checkAbuseIPDB_result['isTor']}</i><br>"
+                                                            f"    - Total Reports: <i>{checkAbuseIPDB_result['totalReports']}")
             else:
                 print_checkAbuseIPDB = f"{Fore.RED}{Style.BRIGHT}No data available.{Style.RESET_ALL}"
                 print(print_checkAbuseIPDB)
-                self.control_results.append(print_checkAbuseIPDB)
+                self.control_results["AbuseIPDB"] = "No data available"
                 self.generate_html_report("AbuseIPDB", False, "No data available for the IP address in the AbuseIPDB database.")
 
-        # Check if the 
+        # Check the IP location using the method checkIp2Location()
         error_code, checkIp2Location_result = self.checkIp2Location()
         if error_code:
             print_checkIp2Location_result = f"{Fore.RED} IP2Location API: error, see the log file in static/log for further information{Style.RESET_ALL}"
             print(print_checkIp2Location_result)
-            self.control_results.append(print_checkIp2Location_result)
+            self.control_results["IP2Location"] = "error"
             self.generate_html_report("Ip2Location", False, "Error while checking the IP address with Ip2Location, see the log file for further information.")
         else:
             print_checkIp2Location_result = f"{Style.BRIGHT} IP2Location API: {Fore.GREEN}request success{Style.RESET_ALL}\n" \
@@ -202,20 +233,19 @@ class QRScanner:
                                         f"        _> Latitude: {Fore.GREEN}{checkIp2Location_result['latitude']}{Style.RESET_ALL}\n" \
                                         f"        _> Longitude: {Fore.GREEN}{checkIp2Location_result['longitude']}{Style.RESET_ALL}\n" \
                                         f"        _> Zip Code: {Fore.GREEN}{checkIp2Location_result['zip_code']}{Style.RESET_ALL}\n" \
-                                        f"        _> Is Proxy: {Fore.RED if checkIp2Location_result['is_proxy'] is False else ''}{checkIp2Location_result['is_proxy']}{Style.RESET_ALL}"
+                                        f"        _> Is Proxy: {Fore.RED if checkIp2Location_result['is_proxy'] is False else Fore.GREEN}{checkIp2Location_result['is_proxy']}{Style.RESET_ALL}"
             print(print_checkIp2Location_result)
-            self.control_results.append(print_checkIp2Location_result)
-            self.generate_html_report("IP2Location", True, f"<b><u>Ip2Location result:<br></b></u>"
-                                                                f"    - Country Code: <i>{checkIp2Location_result['country_code']}</i><br>"
-                                                                f"    - Country Name: <i>{checkIp2Location_result['country_name']}</i><br>"
-                                                                f"    - Region Name: <i>{checkIp2Location_result['region_name']}</i><br>"
-                                                                f"    - City Name: <i>{checkIp2Location_result['city_name']}</i><br>"
-                                                                f"    - Latitude: <i>{checkIp2Location_result['latitude']}</i><br>"
-                                                                f"    - Longitude: <i>{checkIp2Location_result['longitude']}</i><br>"
-                                                                f"    - Zip Code: <i>{checkIp2Location_result['zip_code']}</i><br>"
-                                                                f"    - Is Proxy: <i>{checkIp2Location_result['is_proxy']}</i><br>")
-        
-
+            self.control_results["IP2Location"] = checkIp2Location_result
+            self.generate_html_report("Ip2Location", True, f"<b><u>IP2Location result:</b></u><br>"
+                                                            f"    - Country Code: <i>{checkIp2Location_result['country_code']}</i><br>"
+                                                            f"    - Country Name: <i>{checkIp2Location_result['country_name']}</i><br>"
+                                                            f"    - Region Name: <i>{checkIp2Location_result['region_name']}</i><br>"
+                                                            f"    - City Name: <i>{checkIp2Location_result['city_name']}</i><br>"
+                                                            f"    - Latitude: <i>{checkIp2Location_result['latitude']}</i><br>"
+                                                            f"    - Longitude: <i>{checkIp2Location_result['longitude']}</i><br>"
+                                                            f"    - Zip Code: <i>{checkIp2Location_result['zip_code']}</i><br>"
+                                                            f"    - Is Proxy: <i>{checkIp2Location_result['is_proxy']}</i>")
+            
         # more control coming soon :)
         print(f"{Style.BRIGHT}\nMore control coming soon...{Style.RESET_ALL}")
 
@@ -233,6 +263,22 @@ class QRScanner:
             str: The decoded URL from the QR code.
         """
         return self.urlCode
+
+    def checkActionScheme(self):
+      # Define a regular expression pattern to match action schemes
+        pattern = re.compile(
+            r'^(mailto:|tel:|sms:|geo:|maps:|whatsapp:|facetime:|skype:|viber:|weixin:|line:|tg:|zoom:|sips:|sip:|ftp:|file:|callto:|git:|magnet:)', re.IGNORECASE)
+        
+        # Search for the pattern in the provided text
+        match = pattern.match(self.urlCode)
+        
+        if match:
+            # If a match is found, return True indicating the presence of an action scheme
+            return True
+        else:
+            # If no match is found, return False
+            return False
+
 
     def checkShortUrl(self):
         """
@@ -346,7 +392,7 @@ class QRScanner:
         """
         headers = {'API-Key': self.api_manager.get_api_key("urlscanio"), 'Content-Type':'application/json'}
         data = {"url": self.urlCode, "visibility": "public"}
-        response = requests.post('https://urlscan.io/api/v1/scan/',headers=headers, data=json.dumps(data))
+        response = requests.post('https://urlscan.io/api/v1/scan/', headers=headers, data=json.dumps(data))
         if response.status_code == 200:
             return False, response.json()["result"]
         else:
@@ -441,6 +487,41 @@ class QRScanner:
             # If the request fails, return False
             return True
 
+    # This method will be used to call all the API services
+    def urlScan_APIservice(self):
+            
+            # if it's an action scheme we don't need to continue with the control
+            action_scheme_result = self.checkActionScheme()
+            if action_scheme_result:
+                message = ("This QR code contains an action scheme."\
+                          "No further analysis is required. Be careful when opening a scheme, it could open some external services")
+                self.control_results["action_scheme"] = { "result" : action_scheme_result,
+                                                          "message" : message
+                                                          }
+                return
+            else:  
+                self.control_results["action_scheme"] = { "result" : action_scheme_result,
+                                                     "message" : "This QR code contains an action scheme." if action_scheme_result else "This QR code does not contain an action scheme."}
+
+            self.control_results["short_url"] = self.checkShortUrl()
+
+            vt_result, vt_error = self.checkVirusTotal()
+            self.control_results["virus_total"] = {"result": vt_result, "error": vt_error}
+
+            ipqs_result, ipqs_error = self.checkIpQualityScore()
+            self.control_results["ip_quality_score"] = {"result": ipqs_result, "error": ipqs_error}
+
+            urlscanio_error, urlscanio_result = self.checkURLscanIO()
+            self.control_results["url_scan_io"] = {"result": urlscanio_result, "error": urlscanio_error}
+
+            abuseipdb_error, abuseipdb_result = self.checkAbuseIPDB()
+            self.control_results["abuse_ip_db"] = {"result": abuseipdb_result, "error": abuseipdb_error}
+
+            ip2location_error, ip2location_result = self.checkIp2Location()
+            self.control_results["ip2_location"] = {"result": ip2location_result, "error": ip2location_error}
+
+            return 
+    
     # Save an error message to the log file
     def save_error_to_log(self, service_name, error_message):
 
@@ -463,7 +544,6 @@ class QRScanner:
         # print(f"Error logged in {self.log_file_path}: {error_message}")
 
         return
-
     # Reset the log file, I need to reset only one time when the tool is run so I'll call in the Controller.py run() method
     def reset_log_file(self):
         if os.path.exists(self.log_file_path):
@@ -559,7 +639,6 @@ class QRScanner:
 
             self.__set_report_file_path(report_file_path)
             # print(f"Report saved to {report_file_path}")
-
 
     def __set_report_file_path(self, report_file_path):
         self.report_file_path = report_file_path
