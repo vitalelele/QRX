@@ -1,5 +1,6 @@
 import qrcode, os, datetime
 from colorama import init, Fore, Style
+from PIL import Image
 
 # Initialize colorama for cross-platform colored text
 init(convert=True)
@@ -10,38 +11,114 @@ class QRGenerator:
 
     def generate_qr_code(self, data):
         try:
-            # Ask the user if they want to use a custom path
-            use_custom_path = input("Do you want to enter a custom path for saving the generated QR code? (Y/N): ").strip().upper()
+            # Display menu for choosing QR code type
+            print(f"\nChoose the type of {Style.BRIGHT}QR code{Style.RESET_ALL} to generate:")
+            print(f"{Fore.YELLOW} [1]{Style.RESET_ALL} Standard QR code (max capacity: 2953 alphanumeric characters)")
+            print(f"{Fore.YELLOW} [2]{Style.RESET_ALL} FrameQR (max capacity: 2716 alphanumeric characters)")
+            print(f"{Fore.YELLOW} [3]{Style.RESET_ALL} MicroQR code (max capacity: 35 alphanumeric characters)")
+            print(f"{Fore.YELLOW} [4]{Style.RESET_ALL} Custom QR code (max capacity: depends on settings)")
+            choice = input(f"{Style.BRIGHT}{Fore.YELLOW} _>{Style.RESET_ALL} Enter your choice: ")
 
-            if use_custom_path == "Y":
-                # Ask the user to enter the desired path
-                file_path = input("Enter the save path for the generated QR code: ").strip()
-                # Check if the specified path is a folder
-                if not (self.is_safe_path(file_path) and os.path.isdir(file_path)):
-                    print(f"{Fore.RED}\nThe specified path is not a valid folder.{Style.RESET_ALL}")
-                    return
+            if choice == "1":
+                self.generate_standard_qr_code(data)
+            elif choice == "2":
+                self.generate_frameqr(data)
+            elif choice == "3":
+                self.generate_microqr(data)
+            elif choice == "4":
+                # Implement custom QR code generation here
+                print("Custom QR code generation is not yet implemented.")
             else:
-                # Create the folder if it doesn't exist
-                if not os.path.exists(self.default_folder):
-                    os.makedirs(self.default_folder)
-                
-                # File name (you can customize it as desired)
-                file_name = self.generate_file_name(self.default_folder)
-                # Full file path
-                file_path = os.path.join(self.default_folder, file_name)
-
-            # Generate the QR code
-            qr = qrcode.make(data)
-            # Save the QR code to the specified path
-            qr.save(file_path)
-
-
-            # Print a success message
-            print(f"{Fore.GREEN}QR code generated and saved at: {file_path}{Style.RESET_ALL}")
+                print("Invalid choice.")
 
         except Exception as e:
             # Print an error message
             print(f"{Fore.RED}Error during generation: {e}{Style.RESET_ALL}")
+
+    def generate_standard_qr_code(self, data):
+        try:
+            # Generate the QR code
+            qr = qrcode.make(data)
+            # Save the QR code to the specified path
+            qr.save(self.get_file_path())
+
+            # Print a success message
+            print(f"{Fore.GREEN}Standard QR code generated and saved in {self.default_folder} {Style.RESET_ALL}")
+
+        except Exception as e:
+            # Print an error message
+            print(f"{Fore.RED}Error during generation: {e}{Style.RESET_ALL}")
+
+
+    # TODO: need to fix the FrameQR code generation
+    # FrameQR code generation is not working properly
+    # whyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy >.<
+    def generate_frameqr(self, data):
+        try:
+            # Load the logo image
+            logo_path = input("Enter the path to the logo image: ")
+            if not os.path.exists(logo_path):
+                print(f"{Fore.RED}Logo image not found.{Style.RESET_ALL}")
+                return
+
+            # Generate the FrameQR code
+            qr = qrcode.QRCode(version=6, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+            qr.add_data(data)
+            qr.make(fit=True)
+
+            # Load the logo image and add it to the QR code
+            logo_img = Image.open(logo_path)
+            qr_img = qr.make_image(fill_color="black", back_color="white")
+            qr_width, qr_height = qr_img.size
+            logo_width, logo_height = logo_img.size
+            # Calculate position to place logo in the center of the QR code
+            position = ((qr_width - logo_width) // 2, (qr_height - logo_height) // 2)
+            # Paste logo on QR code image
+            qr_img.paste(logo_img, position)
+
+            # Save the FrameQR code to the specified path
+            qr_img.save(self.get_file_path())
+
+            # Print a success message
+            print(f"{Fore.GREEN}FrameQR code with logo generated and saved in {self.default_folder}.{Style.RESET_ALL}")
+
+        except Exception as e:
+            # Print an error message
+            print(f"{Fore.RED}Error during FrameQR code generation: {e}{Style.RESET_ALL}")
+
+    def generate_microqr(self, data):
+        try:
+            # Generate the QR code
+            qr = qrcode.make(data, version=1)
+            # Save the QR code to the specified path
+            qr.save(self.get_file_path())
+
+            # Print a success message
+            print(f"{Fore.GREEN}MicroQR code generated and saved in {self.default_folder}{Style.RESET_ALL}")
+
+        except Exception as e:
+            # Print an error message
+            print(f"{Fore.RED}Error during generation: {e}{Style.RESET_ALL}")
+
+    def get_file_path(self):
+        # Ask the user if they want to use a custom path
+        use_custom_path = input("Do you want to enter a custom path for saving the generated QR code? (y/n): ").strip().upper()
+
+        if use_custom_path == "Y":
+            # Ask the user to enter the desired path
+            file_path = input(f"{Style.BRIGHT}{Fore.YELLOW} _>{Style.RESET_ALL} Enter the save path for the generated QR code: ").strip()
+            # Check if the specified path is a folder
+            if not (self.is_safe_path(file_path) and os.path.isdir(file_path)):
+                print(f"{Fore.RED}\nThe specified path is not a valid folder.{Style.RESET_ALL}")
+                return None
+            else:
+                return os.path.join(file_path, self.generate_file_name(file_path))
+        else:
+            # Create the folder if it doesn't exist
+            if not os.path.exists(self.default_folder):
+                os.makedirs(self.default_folder)
+            return os.path.join(self.default_folder, self.generate_file_name(self.default_folder))
+
 
     def generate_file_name(self, folder_path):
         # Generate a unique file name based on the current timestamp

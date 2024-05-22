@@ -23,8 +23,20 @@ qr_scanner.is_api_call = True
 
 # TODO: Create endpoints for QRX tool using FastAPI
 @app.get("/")
-async def read_root():
-    return {"message": "Hello, World!"}
+async def info_root():
+    return {"message": "Hello, this is QRAPIX, follow the documentation to use the API service",
+            "GitHub Repository": "github.com/vitalelele/qrx",
+            "Author": "Antonio Vitale",
+            "API Documentation": "link.to/documentation",
+            "API Version": "1.0",
+            "API Name": "QRAPIX",
+            "API Description": "API service for QRX tool",
+            "API Status": "Active",
+            "API License": "MIT",
+            "API Contact": "",
+            "API Endpoints": "scan_qr, generate_qr, about_project",
+            }
+            
 
 @app.get("/about_project")
 async def about_project():
@@ -49,3 +61,13 @@ async def scan_qr(qr_code: UploadFile = File(...)):
     
     except Exception as e:
         return {"error": str(e)}
+
+# TODO: Add endpoint for generating QR codes
+@app.post("/generate_qr")
+async def generate_qr(data: str):
+    # try:
+    #     qr_scanner.generate_qr_code(data)
+    #     return {"message": "QR code generated successfully"}
+    # except Exception as e:
+    #     return {"error": str(e)}
+    pass
