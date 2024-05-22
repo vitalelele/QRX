@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://i.imgur.com/QRCodeToolLogo.png" alt="QRX - QReXamination Logo" width="200" height="200">
-</p>
-
 # 🚀 QRX - QReXamination 🎨
 
 ## Overview
