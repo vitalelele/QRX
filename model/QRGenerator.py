@@ -50,10 +50,20 @@ class QRGenerator:
             print(f"{Fore.RED}Error during generation: {e}{Style.RESET_ALL}")
 
 
-    # TODO: need to fix the FrameQR code generation
-    # FrameQR code generation is not working properly
-    # whyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy >.<
     def generate_frameqr(self, data):
+        """
+        Generates a FrameQR code with a logo image.
+
+        Args:
+            data (str): The data to be encoded in the QR code.
+
+        Raises:
+            FileNotFoundError: If the logo image file is not found.
+            Exception: If an error occurs during FrameQR code generation.
+
+        Returns:
+            None
+        """
         try:
             # Load the logo image
             logo_path = input("Enter the path to the logo image: ")
@@ -62,25 +72,41 @@ class QRGenerator:
                 return
 
             # Generate the FrameQR code
-            qr = qrcode.QRCode(version=6, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+            qr = qrcode.QRCode(version=6, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=4)
             qr.add_data(data)
             qr.make(fit=True)
 
-            # Load the logo image and add it to the QR code
+            # Load the logo image
             logo_img = Image.open(logo_path)
-            qr_img = qr.make_image(fill_color="black", back_color="white")
+
+            # Ensure the logo image has an alpha channel
+            if logo_img.mode != 'RGBA':
+                logo_img = logo_img.convert('RGBA')
+
+            # Create the QR code image
+            qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
             qr_width, qr_height = qr_img.size
-            logo_width, logo_height = logo_img.size
+
+            # Resize the logo to fit the center of the QR code
+            logo_size = qr_width // 4
+            logo_img = logo_img.resize((logo_size, logo_size), Image.LANCZOS)
+
             # Calculate position to place logo in the center of the QR code
-            position = ((qr_width - logo_width) // 2, (qr_height - logo_height) // 2)
-            # Paste logo on QR code image
-            qr_img.paste(logo_img, position)
+            position = ((qr_width - logo_size) // 2, (qr_height - logo_size) // 2)
+
+            # Create a blank canvas with the same size as the QR code
+            canvas = Image.new('RGB', (qr_width, qr_height), 'white')
+            # Paste the QR code onto the canvas
+            canvas.paste(qr_img, (0, 0))
+            # Paste the logo onto the canvas at the calculated position with transparency handling
+            canvas.paste(logo_img, position, mask=logo_img)
 
             # Save the FrameQR code to the specified path
-            qr_img.save(self.get_file_path())
+            file_path = self.get_file_path()
+            canvas.save(file_path)
 
             # Print a success message
-            print(f"{Fore.GREEN}FrameQR code with logo generated and saved in {self.default_folder}.{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}FrameQR code with logo generated and saved in {file_path}.{Style.RESET_ALL}")
 
         except Exception as e:
             # Print an error message
@@ -118,7 +144,6 @@ class QRGenerator:
             if not os.path.exists(self.default_folder):
                 os.makedirs(self.default_folder)
             return os.path.join(self.default_folder, self.generate_file_name(self.default_folder))
-
 
     def generate_file_name(self, folder_path):
         # Generate a unique file name based on the current timestamp
@@ -168,6 +193,7 @@ class QRGenerator:
         except Exception as e:
             # Print an error message
             print(f"{Fore.RED}Error during deletion: {e}{Style.RESET_ALL}")
+            
     def is_safe_path(self, path):
         """
         Checks if the specified path is safe and exists.

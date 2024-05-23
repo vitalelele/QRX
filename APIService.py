@@ -1,11 +1,19 @@
-from fastapi import FastAPI, File, UploadFile
-from pydantic import BaseModel
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from view.View import View
 from model.QRScanner import QRScanner
+from model.QRGenerator import QRGenerator
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field, constr
+import shutil, os
 
 app = FastAPI()
 qr_scanner = QRScanner()
+qr_generator = QRGenerator()
 qr_scanner.is_api_call = True
+
+class QRCodeRequest(BaseModel):
+    data: str = Field(..., example="Your data here")
+    qr_type: str = Field(default="standard", example="standard")
 
 
 '''
@@ -46,7 +54,7 @@ async def about_project():
 @app.post("/scan_qr")
 async def scan_qr(qr_code: UploadFile = File(...)):
     if not qr_code:
-        return {"error": "No QR code file provided"}
+        raise HTTPException(status_code=400, detail="No QR code file provided")
 
     try:
         file_contents = await qr_code.read()
@@ -57,17 +65,30 @@ async def scan_qr(qr_code: UploadFile = File(...)):
         qr_scanner.scan_qr_code(file_path)
         qr_scanner.urlScan_APIservice()
         result = qr_scanner.get_control_results()
-        return {"result" : result}
-    
-    except Exception as e:
-        return {"error": str(e)}
+        return {"result": result}
 
-# TODO: Add endpoint for generating QR codes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/generate_qr")
-async def generate_qr(data: str):
-    # try:
-    #     qr_scanner.generate_qr_code(data)
-    #     return {"message": "QR code generated successfully"}
-    # except Exception as e:
-    #     return {"error": str(e)}
-    pass
+async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: UploadFile = File(None)):
+    try:
+        logo_path = None
+        if qr_type == "frame" and logo:
+            logo_path = f"static/qr_generated/{logo.filename}"
+            with open(logo_path, "wb") as buffer:
+                shutil.copyfileobj(logo.file, buffer)
+
+        temp_file_path = qr_generator.generate_temporary_qr(data, qr_type, logo_path)
+        if temp_file_path:
+            response = FileResponse(temp_file_path, media_type="image/png", filename=os.path.basename(temp_file_path))
+            return response
+        else:
+            raise HTTPException(status_code=500, detail="QR code generation failed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if temp_file_path:
+            qr_generator.delete_temporary_qr(os.path.basename(temp_file_path))
+        if logo_path and os.path.exists(logo_path):
+            os.remove(logo_path)
