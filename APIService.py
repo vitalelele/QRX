@@ -10,11 +10,11 @@ app = FastAPI()
 qr_scanner = QRScanner()
 qr_generator = QRGenerator()
 qr_scanner.is_api_call = True
+qr_generator.is_api_call = True
 
 class QRCodeRequest(BaseModel):
     data: str = Field(..., example="Your data here")
-    qr_type: str = Field(default="standard", example="standard")
-
+    qr_type: str = constr(regex="^(standard|microqr|frame)$") 
 
 '''
     This is the API service that will be used to interact with the QRX tool.
@@ -43,8 +43,7 @@ async def info_root():
             "API License": "MIT",
             "API Contact": "",
             "API Endpoints": "scan_qr, generate_qr, about_project",
-            }
-            
+            }           
 
 @app.get("/about_project")
 async def about_project():
@@ -72,6 +71,7 @@ async def scan_qr(qr_code: UploadFile = File(...)):
 
 @app.post("/generate_qr")
 async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: UploadFile = File(None)):
+    qr_generator.delete_temporary_qr_codes()
     try:
         logo_path = None
         if qr_type == "frame" and logo:
@@ -79,7 +79,7 @@ async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: Upl
             with open(logo_path, "wb") as buffer:
                 shutil.copyfileobj(logo.file, buffer)
 
-        temp_file_path = qr_generator.generate_temporary_qr(data, qr_type, logo_path)
+        temp_file_path = qr_generator.generate_temporary_qr_api(data, qr_type, logo_path)
         if temp_file_path:
             response = FileResponse(temp_file_path, media_type="image/png", filename=os.path.basename(temp_file_path))
             return response
@@ -87,8 +87,3 @@ async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: Upl
             raise HTTPException(status_code=500, detail="QR code generation failed")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if temp_file_path:
-            qr_generator.delete_temporary_qr(os.path.basename(temp_file_path))
-        if logo_path and os.path.exists(logo_path):
-            os.remove(logo_path)

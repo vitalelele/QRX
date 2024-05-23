@@ -8,6 +8,7 @@ init(convert=True)
 class QRGenerator:
     def __init__(self):
         self.default_folder = "static\qr_generated"
+        self.is_api_call = False
 
     def generate_qr_code(self, data):
         try:
@@ -48,7 +49,6 @@ class QRGenerator:
         except Exception as e:
             # Print an error message
             print(f"{Fore.RED}Error during generation: {e}{Style.RESET_ALL}")
-
 
     def generate_frameqr(self, data):
         """
@@ -153,7 +153,11 @@ class QRGenerator:
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d_%H_%M_%S")
         # Base file name format 
-        base_name = "qr_code_" + timestamp + ".png"
+        if self.is_api_call:
+            base_name = "temp_qr_code_" + timestamp + ".png"  
+        else:
+            base_name = "qr_code_" + timestamp + ".png"
+
         file_name = base_name
         counter = 1
         # Check if the file already exists in the specified folder
@@ -161,6 +165,8 @@ class QRGenerator:
             # If the file exists, append a counter to the file name
             file_name = base_name[:-4] + str(counter) + base_name[-4:]
             counter += 1
+
+        
         return file_name
 
     def delete_generated_qr_codes(self):
@@ -193,7 +199,7 @@ class QRGenerator:
         except Exception as e:
             # Print an error message
             print(f"{Fore.RED}Error during deletion: {e}{Style.RESET_ALL}")
-            
+
     def is_safe_path(self, path):
         """
         Checks if the specified path is safe and exists.
@@ -210,3 +216,70 @@ class QRGenerator:
             if os.path.isabs(path) and not ('..' in path or path.startswith('~')):
                 return True
         return False
+
+    def generate_temporary_qr_api(self, data, qr_type="standard", logo_path=None):
+        try:
+            if qr_type == "standard":
+                qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=4)
+            elif qr_type == "frame":
+                qr = qrcode.QRCode(version=6, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=4)
+                if not logo_path or not os.path.exists(logo_path):
+                    raise ValueError("Invalid logo path for frame QR code")
+            elif qr_type == "micro":
+                qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=2)
+            else:
+                raise ValueError("Unsupported QR code type")
+
+            qr.add_data(data)
+            qr.make(fit=True)
+
+            # Create the QR code image
+            qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+
+            if qr_type == "frame" and logo_path:
+                logo_img = Image.open(logo_path)
+                if logo_img.mode != 'RGBA':
+                    logo_img = logo_img.convert('RGBA')
+                qr_width, qr_height = qr_img.size
+                logo_size = qr_width // 4
+                logo_img = logo_img.resize((logo_size, logo_size), Image.LANCZOS)
+                position = ((qr_width - logo_size) // 2, (qr_height - logo_size) // 2)
+                canvas = Image.new('RGB', (qr_width, qr_height), 'white')
+                canvas.paste(qr_img, (0, 0))
+                canvas.paste(logo_img, position, mask=logo_img)
+                qr_img = canvas
+
+            # Ensure the directory exists
+            if not os.path.exists(self.default_folder):
+                os.makedirs(self.default_folder)
+
+            # Generate a unique file name based on the current timestamp
+            filename = self.generate_file_name(self.default_folder)
+            print(filename)
+            temp_file_path = os.path.join(self.default_folder, filename)
+
+            # Save the QR code image
+            qr_img.save(temp_file_path)
+
+            # Print a success message
+            print(f"{Fore.GREEN}Temporary {qr_type} QR code generated and saved in {temp_file_path}.{Style.RESET_ALL}")
+            return temp_file_path
+
+        except Exception as e:
+            print(f"{Fore.RED}Error during QR code generation: {e}{Style.RESET_ALL}")
+            return None
+        
+    def delete_temporary_qr_codes(self):
+        try:
+            # List all files in the default folder
+            file_list = os.listdir(self.default_folder)
+
+            # Delete all temporary QR codes
+            for file_name in file_list:
+                if file_name.startswith("temp_qr_code_"):
+                    file_path = os.path.join(self.default_folder, file_name)
+                    os.remove(file_path)
+
+        except Exception as e:
+            # Print an error message
+            print(f"{Fore.RED}Error during deletion: {e}{Style.RESET_ALL}")
