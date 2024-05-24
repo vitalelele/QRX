@@ -52,13 +52,10 @@ Welcome to QRX - QReXamination! This command-line tool is your ultimate companio
    - Scan a QR code
    - Generate a QR code
 
-## QRAPIX
+## QRAPIX - ![#ff0000](https://via.placeholder.com/15/ff0000/ff0000.png) Offline
 QRX - QReXamination also provides a RESTful API service called QRAPIX, which allows you to interact with the QRX tool programmatically. The API is built using FastAPI and provides the following endpoints:
 
-| QRAPIX Status | ![#ff0000](https://via.placeholder.com/15/ff0000/ff0000.png) Offline | 
 <!-- | QRAPIX Status | ![#00FF00](https://via.placeholder.com/15/00FF00/00FF00.png) Online | -->
-
-|-----------------------------------------------------------------------------------------------|
 
 ### Endpoints
 
@@ -116,7 +113,28 @@ QRX - QReXamination also provides a RESTful API service called QRAPIX, which all
 
 ## Customization
 ### Changing API Keys
-To use certain features, such as URL analysis, you may need to update the API keys in the `config.json` file located in the `static` folder. Please replace the default values (`YOUR_API_KEY`) with your own API keys obtained from the respective service provider. You can obtain API keys from services like Google, Twitter, or other APIs that the tool may utilize.
+To use certain features, such as URL analysis, you may need to update the API keys in the `config.json` file located in the `static` folder. Please replace the default values (`YOUR_API_KEY`) with your own API keys obtained from the respective service provider. Below is a list of the APIs used and how to obtain an API key for each service:
+
+**VirusTotal**
+- **Documentation:** [VirusTotal API Documentation](https://developers.virustotal.com/v3.0/reference)
+- **Get API Key:** Sign up for a free account at [VirusTotal](https://www.virustotal.com/) and obtain your API key from your account settings.
+
+**IPQualityScore**
+- **Documentation:** [IPQualityScore API Documentation](https://www.ipqualityscore.com/documentation/proxy-detection/overview)
+- **Get API Key:** Sign up for a free account at [IPQualityScore](https://www.ipqualityscore.com/) and obtain your API key from your account settings.
+
+**urlscan.io**
+- **Documentation:** [urlscan.io API Documentation](https://urlscan.io/docs/api/)
+- **Get API Key:** Sign up for a free account at [urlscan.io](https://urlscan.io/) and obtain your API key from your account settings.
+
+**AbuseIPDB**
+- **Documentation:** [AbuseIPDB API Documentation](https://docs.abuseipdb.com/)
+- **Get API Key:** Sign up for a free account at [AbuseIPDB](https://www.abuseipdb.com/) and obtain your API key from your account settings.
+
+**IP2Location**
+- **Documentation:** [IP2Location API Documentation](https://www.ip2location.com/web-service/ip2location)
+- **Get API Key:** Sign up for a free account at [IP2Location](https://www.ip2location.com/) and obtain your API key from your account settings.
+
 
 ## Environment Setup
 For maximum security, we recommend setting up a virtual environment before installing the dependencies. Here's how you can do it:
