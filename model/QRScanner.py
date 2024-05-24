@@ -293,17 +293,6 @@ class QRScanner:
 
         return any(self.urlCode.startswith(shortened) for shortened in short_urls)
 
-
-        # try:
-        #     response = requests.head(self.urlCode)
-        #     if response.status_code == 301 or response.status_code == 302:
-        #         return True
-        #     else:
-        #         return False
-        # except requests.exceptions.RequestException as e:
-        #     print("Error while checking the URL:", e)
-        #     return False
-
     def checkVirusTotal(self):
         """
         Checks the URL against the VirusTotal API for malicious content.

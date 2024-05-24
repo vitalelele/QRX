@@ -2,6 +2,10 @@ import sys, random, shutil, re
 from colorama import init, Fore, Style
 
 class View:
+    """
+    The View class represents the user interface of the QRX project.
+    It provides methods for printing banners, menus, and messages to the console.
+    """
 
     def __init__(self):
         # Initialize colorama for cross-platform colored text
@@ -12,10 +16,12 @@ class View:
             f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs. "
             f"Visit the GitHub repository for more information "
             f"https://github.com/vitalelele/QRX{Style.RESET_ALL}"
-                    )       
+        )
 
-    # Print the banner
     def print_banner(self):
+        """
+        Prints a random banner from the 'banners.txt' file.
+        """
         try:
             # Read the entire content of banners.txt as a single string
             with open("static/banners.txt", "r") as file:
@@ -40,8 +46,10 @@ class View:
         except FileNotFoundError:
             self.print_centered(f"{Fore.RED}File banners.txt not found.{Style.RESET_ALL}")
 
-
     def show_menu(self):
+        """
+        Prints the main menu options.
+        """
         menu = f"""
         {Fore.MAGENTA}{Style.BRIGHT}--- Select an option ---{Style.RESET_ALL}
         1. Scan a QR code
@@ -52,15 +60,19 @@ class View:
         """
         print(menu)
 
-    # TODO: change about the project text
     def about_project(self):
+        """
+        Prints information about the QRX project.
+        """
         self.print_centered(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalelele.")
         self.print_centered(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
         self.print_centered(f"Visit the GitHub repository for more information")
         self.print_centered(f"https://github.com/vitalelele/QRX{Style.RESET_ALL}")
-        
 
     def print_options(self):
+        """
+        Prints the options menu.
+        """
         options = """
         Options:
         1. Empty the 'qr_generated' folder (delete all generated QR codes)
@@ -70,13 +82,18 @@ class View:
         """
         print(options)
 
-    # Print a centered text
     def print_centered(self, text):
-        # Rimuovi i colori ANSI prima di calcolare la lunghezza del testo
+        """
+        Prints a text centered in the console.
+        """
+        # Remove ANSI colors before calculating the length of the text
         text_without_ansi = re.sub(r'\x1b\[[0-9;]*m', '', text)
         terminal_width = shutil.get_terminal_size().columns
         padding = (terminal_width - len(text_without_ansi)) // 2
         print(f" " * padding + text)
-    
+
     def get_message_about_project(self):
+        """
+        Returns the message about the project.
+        """
         return self.message_about_project

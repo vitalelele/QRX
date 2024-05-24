@@ -20,7 +20,6 @@ class Controller:
         # for debugging I made another config file that contains my API the debuConfig.json added to the .gitignore
         self.api_manager = APIManager("static/debugConfig.json")
 
-
     def run(self):
         self.api_manager.load_api_keys()
         # Print the banner
