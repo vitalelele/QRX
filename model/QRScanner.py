@@ -17,18 +17,31 @@ Developed by @vitalelele - 2024
 class QRScanner:
 
     def __init__(self):
+        """
+        Initializes the QRScanner object.
+
+        Attributes:
+            urlCode (str): The decoded URL from the QR code.
+            urlIpAddr (str): The IP address associated with the URL.
+            log_file_path (str): The path to the log file for error messages.
+            report_file_path (str): The path to save the HTML report.
+            report_data (list): A list to store the data for the report.
+            control_results (dict): A dictionary to store the results of the control checks.
+            is_api_call (bool): Indicates whether the API call is enabled.
+            api_manager (APIManager): An instance of the APIManager class.
+
+        Returns:
+            None
+        """
         self.urlCode = None
         self.urlIpAddr = None
         self.log_file_path = "static/log/logError.txt"
         self.report_file_path = None
         self.report_data = []
-        self.control_results = {}  # Dictionary to store the results of the control checks
+        self.control_results = {}
         self.is_api_call = False
-        # Initialize the API manager with the configuration file
-        # self.api_manager = APIManager("static/config.json")
-
-        # for debugging I made another config file that contains my API the debuConfig.json added to the .gitignore
         self.api_manager = APIManager("static/debugConfig.json")
+        init(convert=True) # Initialize colorama for cross-platform colored text
 
     def scan_qr_code(self, file_path):
         """
@@ -38,7 +51,7 @@ class QRScanner:
             file_path (str): The path to the image file containing the QR code.
 
         Returns:
-            None
+            bool: True if a QR code is found and processed successfully, False otherwise.
         """
         init(convert=True)
         try:
@@ -60,6 +73,7 @@ class QRScanner:
                 return False
         except Exception as e:
             print("Error during scanning:", e)
+            return False
 
     def print_qr_code_info(self, obj):
         """
@@ -119,13 +133,17 @@ class QRScanner:
         print(" Done" + Style.RESET_ALL)
 
     def urlControl(self):
+        """
+        Performs URL analysis for a QR code.
 
+        This method checks various aspects of the URL obtained from the QR code, such as the action scheme, URL shortening, safety using VirusTotal,
+        IP quality using IPQualityScore, URL scanning using URLscanIO, presence in the AbuseIPDB database, and IP location using IP2Location.
+
+        Returns:
+            None
+        """
         print(f"\n{Style.BRIGHT}{Fore.YELLOW}QR Code URL Analysis Result:{Style.RESET_ALL}")
 
-        # Initialize colorama with convert=True
-        init(convert=True)
-
-        # First we need to verify if it's an action scheme
         is_action_scheme = self.checkActionScheme()
         action_scheme_result = f"{Style.BRIGHT}{Fore.YELLOW} [!] {Style.RESET_ALL}Action Scheme: {Fore.GREEN if is_action_scheme else Fore.RED}{'true' if is_action_scheme else 'false'}{Style.RESET_ALL}"
         print(action_scheme_result)
@@ -265,33 +283,35 @@ class QRScanner:
         return self.urlCode
 
     def checkActionScheme(self):
-      # Define a regular expression pattern to match action schemes
-        pattern = re.compile(
-            r'^(mailto:|tel:|sms:|geo:|maps:|whatsapp:|facetime:|skype:|viber:|weixin:|line:|tg:|zoom:|sips:|sip:|ftp:|file:|callto:|git:|magnet:)', re.IGNORECASE)
-        
-        # Search for the pattern in the provided text
-        match = pattern.match(self.urlCode)
-        
-        if match:
-            # If a match is found, return True indicating the presence of an action scheme
-            return True
-        else:
-            # If no match is found, return False
-            return False
-
-
-    def checkShortUrl(self):
         """
-        Checks if the decoded URL is a short URL.
+        Checks if the provided URL code contains an action scheme.
 
         Returns:
-            bool: True if the decoded URL is a short URL, False otherwise.
+            bool: True if an action scheme is present, False otherwise.
         """
-        # urlShortList.txt contain the list of short urls
-        with open("static/urlShortList.txt", "r") as f:
-            short_urls = f.read().splitlines()
+        pattern = re.compile(
+            r'^(mailto:|tel:|sms:|geo:|maps:|whatsapp:|facetime:|skype:|viber:|weixin:|line:|tg:|zoom:|sips:|sip:|ftp:|file:|callto:|git:|magnet:)', re.IGNORECASE)
 
-        return any(self.urlCode.startswith(shortened) for shortened in short_urls)
+        match = pattern.match(self.urlCode)
+
+        if match:
+            return True
+        else:
+            return False
+
+    def checkShortUrl(self):
+            """
+            Checks if the decoded URL is a short URL.
+
+            Returns:
+                bool: True if the decoded URL is a short URL, False otherwise.
+            """
+            # urlShortList.txt contain the list of short urls
+            with open("static/urlShortList.txt", "r") as f:
+                short_urls = f.read().splitlines()
+
+            # Check if the URL starts with any of the short URLs
+            return any(self.urlCode.startswith(shortened) for shortened in short_urls)
 
     def checkVirusTotal(self):
         """
@@ -305,6 +325,7 @@ class QRScanner:
             bool: True if the URL is safe, False if it is flagged as malicious.
             bool: True if there was an error while checking the URL with VirusTotal, False otherwise.
         """
+
         # Encode the URL using Base64, refer to the VirusTotal API documentation for more information
         url_id = base64.urlsafe_b64encode(self.urlCode.encode()).decode().strip("=")
 
@@ -319,6 +340,7 @@ class QRScanner:
             "x-apikey": f"{self.api_manager.get_api_key('virustotal')}"
             ""
             }
+        
         # This URL return a list of Vote objects that contain the verdict of the URL
         # Refer to: https://docs.virustotal.com/reference/vote-object
         response = requests.get(url, headers=headers)
@@ -352,14 +374,11 @@ class QRScanner:
 
         if response.status_code == 200:
             data = response.json()
-            # print(data["unsafe"])
             if data["unsafe"] == False:
-                # means that is safe
                 return True, False
             else:
                 return False, False
         else:
-            # This basically means an error occurred while checking the URL with IpQualityScore, maybe is not an URL
             error_message = response.text
             self.save_error_to_log("IpQualityScore", error_message)
             return False, True
@@ -382,6 +401,7 @@ class QRScanner:
         headers = {'API-Key': self.api_manager.get_api_key("urlscanio"), 'Content-Type':'application/json'}
         data = {"url": self.urlCode, "visibility": "public"}
         response = requests.post('https://urlscan.io/api/v1/scan/', headers=headers, data=json.dumps(data))
+
         if response.status_code == 200:
             return False, response.json()["result"]
         else:
@@ -405,7 +425,6 @@ class QRScanner:
                        - isTor: Indicates if the IP address is a Tor exit node
                        - totalReports: The total number of reports for the IP address
         """
-        # Defining the api-endpoint
         url = 'https://api.abuseipdb.com/api/v2/check'
 
         querystring = {
@@ -451,15 +470,11 @@ class QRScanner:
             tuple: A tuple containing a boolean value indicating the success of the request and a dictionary
             containing the extracted information if the request is successful. If the request fails, only the boolean value is returned.
         """
-        # Define the payload for the request
         payload = {'key': self.api_manager.get_api_key("ip2location"), 'ip': self.getIpAddr(), 'format': 'json'}
         
-        # Make the HTTP request
         response = requests.get('https://api.ip2location.io/', params=payload)
         
-        # Check the response status
         if response.status_code == 200:
-            # If the request is successful, extract the requested information
             data = response.json()
             result_return = {
                 "country_code": data["country_code"],
@@ -473,47 +488,49 @@ class QRScanner:
             }
             return False, result_return
         else:
-            # If the request fails, return False
             return True
 
-    # This method will be used to call all the API services
     def urlScan_APIservice(self):
-            
-            # if it's an action scheme we don't need to continue with the control
-            action_scheme_result = self.checkActionScheme()
-            if action_scheme_result:
-                message = ("This QR code contains an action scheme."\
-                          "No further analysis is required. Be careful when opening a scheme, it could open some external services")
-                self.control_results["action_scheme"] = { "result" : action_scheme_result,
-                                                          "message" : message
-                                                          }
-                return
-            else:  
-                self.control_results["action_scheme"] = { "result" : action_scheme_result,
-                                                     "message" : "This QR code contains an action scheme." if action_scheme_result else "This QR code does not contain an action scheme."}
+        """
+        This method is used for making API calls.
 
-            self.control_results["short_url"] = self.checkShortUrl()
+        It performs various checks and stores the results in the `self.control_results` dictionary.
 
-            vt_result, vt_error = self.checkVirusTotal()
-            self.control_results["virus_total"] = {"result": vt_result, "error": vt_error}
+        Returns:
+            None
+        """
+        # if it's an action scheme we don't need to continue with the control
+        action_scheme_result = self.checkActionScheme()
+        if action_scheme_result:
+            message = ("This QR code contains an action scheme."
+                       "No further analysis is required. Be careful when opening a scheme, it could open some external services")
+            self.control_results["action_scheme"] = {"result": action_scheme_result,
+                                                     "message": message}
+            return
+        else:
+            self.control_results["action_scheme"] = {"result": action_scheme_result,
+                                                     "message": "This QR code contains an action scheme." if action_scheme_result else "This QR code does not contain an action scheme."}
 
-            ipqs_result, ipqs_error = self.checkIpQualityScore()
-            self.control_results["ip_quality_score"] = {"result": ipqs_result, "error": ipqs_error}
+        self.control_results["short_url"] = self.checkShortUrl()
 
-            urlscanio_error, urlscanio_result = self.checkURLscanIO()
-            self.control_results["url_scan_io"] = {"result": urlscanio_result, "error": urlscanio_error}
+        vt_result, vt_error = self.checkVirusTotal()
+        self.control_results["virus_total"] = {"result": vt_result, "error": vt_error}
 
-            abuseipdb_error, abuseipdb_result = self.checkAbuseIPDB()
-            self.control_results["abuse_ip_db"] = {"result": abuseipdb_result, "error": abuseipdb_error}
+        ipqs_result, ipqs_error = self.checkIpQualityScore()
+        self.control_results["ip_quality_score"] = {"result": ipqs_result, "error": ipqs_error}
 
-            ip2location_error, ip2location_result = self.checkIp2Location()
-            self.control_results["ip2_location"] = {"result": ip2location_result, "error": ip2location_error}
+        urlscanio_error, urlscanio_result = self.checkURLscanIO()
+        self.control_results["url_scan_io"] = {"result": urlscanio_result, "error": urlscanio_error}
 
-            return 
+        abuseipdb_error, abuseipdb_result = self.checkAbuseIPDB()
+        self.control_results["abuse_ip_db"] = {"result": abuseipdb_result, "error": abuseipdb_error}
+
+        ip2location_error, ip2location_result = self.checkIp2Location()
+        self.control_results["ip2_location"] = {"result": ip2location_result, "error": ip2location_error}
+
+        return
     
-    # Save an error message to the log file
     def save_error_to_log(self, service_name, error_message):
-
         """
         Saves an error message to the log file for a specific service.
 
@@ -533,8 +550,19 @@ class QRScanner:
         # print(f"Error logged in {self.log_file_path}: {error_message}")
 
         return
-    # Reset the log file, I need to reset only one time when the tool is run so I'll call in the Controller.py run() method
+
     def reset_log_file(self):
+        """
+        Resets the log file by removing it if it exists.
+
+        If the log file exists, it will be deleted. This method does not create a new log file.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         if os.path.exists(self.log_file_path):
             os.remove(self.log_file_path)
             # print(f"{Fore.YELLOW}Log file reset successfully.{Style.RESET_ALL}")
@@ -630,6 +658,15 @@ class QRScanner:
             # print(f"Report saved to {report_file_path}")
 
     def __set_report_file_path(self, report_file_path):
+        """
+        Set the file path for the report file.
+
+        Parameters:
+        report_file_path (str): The file path for the report file.
+
+        Returns:
+        None
+        """
         self.report_file_path = report_file_path
         return
     
@@ -665,23 +702,45 @@ class QRScanner:
             return False
     
     def getIpAddr(self):
-        return self.urlIpAddr
+            """
+            Returns the IP address associated with the QRScanner object.
+
+            Returns:
+                str: The IP address.
+            """
+            return self.urlIpAddr
     
-    # Set the IP address extracted from the URL
     def __setIpAddr(self):
-        # Analyze the URL to extract only the domain
+        """
+        Sets the IP address based on the URL provided.
+
+        This method analyzes the URL to extract the domain and then retrieves the IP address
+        associated with that domain. If an error occurs while getting the IP address, the
+        error message is printed and the IP address is set to None.
+
+        Returns:
+            None
+        """
         parsed_url = urllib.parse.urlparse(self.urlCode)
 
         try:
-            # Get the IP address from the URL
             ip_address = socket.gethostbyname(parsed_url.hostname)
             self.urlIpAddr = ip_address
         except socket.gaierror as e:
             print(f"Error while getting the IP address: {Fore.RED}{e}{Style.RESET_ALL}")
             self.urlIpAddr = None
-       
+
         return
     
     def __setUrlCode(self, url):
+        """
+        Sets the URL code for the QRScanner object.
+
+        Parameters:
+        url (str): The URL code to be set.
+
+        Returns:
+        None
+        """
         self.urlCode = url
         return
