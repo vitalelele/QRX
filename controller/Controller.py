@@ -36,7 +36,7 @@ class Controller:
                     self.scanner.urlControl()
                 else:
                     self.view.print_banner()
-                    print(f"{Style.BRIGHT}{Fore.RED}Error scanning the QR code.\n{Style.RESET_ALL}")
+                    print(f"{Style.BRIGHT}{Fore.YELLOW}[!] {Style.RESET_ALL}{Fore.RED}Error scanning the QR code.\n{Style.RESET_ALL}")
             # ----------------- Generate a QR code -----------------
             elif choice == "2":
                 data = input(f"{Style.BRIGHT}{Fore.BLUE} [*]{Style.RESET_ALL} Enter the text or URL for the QR code: ")

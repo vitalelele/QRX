@@ -1,12 +1,14 @@
 import qrcode, os, datetime
 from colorama import init, Fore, Style
 from PIL import Image
+from view.View import View
 
 # Initialize colorama for cross-platform colored text
 init(convert=True)
 
 class QRGenerator:
     def __init__(self):
+        self.view = View()
         self.default_folder = "static\qr_generated"
         self.is_api_call = False
 
@@ -25,16 +27,16 @@ class QRGenerator:
             elif choice == "2":
                 self.generate_frameqr(data)
             elif choice == "3":
-                self.generate_microqr(data)
+                self.view.print_banner()
             elif choice == "4":
                 # Implement custom QR code generation here
-                print("Custom QR code generation is not yet implemented.")
+                print(f"{Fore.YELLOW}[!] {Style.RESET_ALL}Custom QR code generation is not yet implemented.")
             else:
-                print("Invalid choice.")
+                print(f"{Fore.YELLOW}[!] {Fore.RED}Invalid choice.{Style.RESET_ALL}")
 
         except Exception as e:
             # Print an error message
-            print(f"{Fore.RED}Error during generation: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}[!] Error during generation: {e}{Style.RESET_ALL}")
 
     def generate_standard_qr_code(self, data):
         try:
@@ -44,7 +46,7 @@ class QRGenerator:
             qr.save(self.get_file_path())
 
             # Print a success message
-            print(f"{Fore.GREEN}Standard QR code generated and saved in {self.default_folder} {Style.RESET_ALL}")
+            print(f"{Fore.BLUE} [*]{Style.RESET_ALL}{Fore.GREEN} Standard QR code generated and saved in {self.default_folder} {Style.RESET_ALL}")
 
         except Exception as e:
             # Print an error message
@@ -68,7 +70,7 @@ class QRGenerator:
             # Load the logo image
             logo_path = input("Enter the path to the logo image: ")
             if not os.path.exists(logo_path):
-                print(f"{Fore.RED}Logo image not found.{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW}[!] {Style.RESET_ALL}{Fore.RED}Logo image not found.{Style.RESET_ALL}")
                 return
 
             # Generate the FrameQR code
@@ -106,11 +108,11 @@ class QRGenerator:
             canvas.save(file_path)
 
             # Print a success message
-            print(f"{Fore.GREEN}FrameQR code with logo generated and saved in {file_path}.{Style.RESET_ALL}")
+            print(f"{Fore.BLUE} [*]{Style.RESET_ALL}{Fore.GREEN} FrameQR code with logo generated and saved in {file_path}.{Style.RESET_ALL}")
 
         except Exception as e:
             # Print an error message
-            print(f"{Fore.RED}Error during FrameQR code generation: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW} [!]{Style.RESET_ALL}{Fore.RED} Error during FrameQR code generation: {e}{Style.RESET_ALL}")
 
     def generate_microqr(self, data):
         try:
@@ -120,7 +122,7 @@ class QRGenerator:
             qr.save(self.get_file_path())
 
             # Print a success message
-            print(f"{Fore.GREEN}MicroQR code generated and saved in {self.default_folder}{Style.RESET_ALL}")
+            print(f"{Fore.BLUE} [*]{Style.RESET_ALL}{Fore.GREEN} MicroQR code generated and saved in {self.default_folder}{Style.RESET_ALL}")
 
         except Exception as e:
             # Print an error message
@@ -128,7 +130,7 @@ class QRGenerator:
 
     def get_file_path(self):
         # Ask the user if they want to use a custom path
-        use_custom_path = input("Do you want to enter a custom path for saving the generated QR code? (y/n): ").strip().upper()
+        use_custom_path = input(f"{Fore.YELLOW} [?]{Style.RESET_ALL} Do you want to enter a custom path for saving the generated QR code? (y/n): ").strip().upper()
 
         if use_custom_path == "Y":
             # Ask the user to enter the desired path

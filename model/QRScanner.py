@@ -3,6 +3,7 @@ from PIL import Image
 from colorama import init, Fore, Style
 import sys, time, requests, base64, os, urllib, json, socket, datetime, re
 from model.APIManager import APIManager
+from view.View import View
 
 """
 A class that represents a QR code scanner.
@@ -41,6 +42,7 @@ class QRScanner:
         self.control_results = {}
         self.is_api_call = False
         self.api_manager = APIManager("static/debugConfig.json")
+        self.view = View()
         init(convert=True) # Initialize colorama for cross-platform colored text
 
     def scan_qr_code(self, file_path):
@@ -69,7 +71,7 @@ class QRScanner:
                     self.print_qr_code_info(obj)    
                     return True
             else:
-                print(f"{Style.BRIGHT}{Fore.RED}No QR code found in the file.\n{Style.RESET_ALL}")
+                print(f"{Style.BRIGHT}{Fore.RED}[!] No QR code found in the file.\n{Style.RESET_ALL}")
                 return False
         except Exception as e:
             print("Error during scanning:", e)
@@ -265,11 +267,12 @@ class QRScanner:
                                                             f"    - Is Proxy: <i>{checkIp2Location_result['is_proxy']}</i>")
             
         # more control coming soon :)
-        print(f"{Style.BRIGHT}\nMore control coming soon...{Style.RESET_ALL}")
+        print(f"{Style.BRIGHT}\n More control coming soon...{Style.RESET_ALL}")
 
         # Save the report to an HTML file
         self.save_report()
-        print(f"{Style.BRIGHT}{Fore.GREEN}Report saved to {self.report_file_path}{Style.RESET_ALL}")
+        print(f"{Style.BRIGHT}{Fore.BLUE} [*]{Fore.GREEN} Report saved to {self.report_file_path}{Style.RESET_ALL}")
+        self.view.print_banner()
 
         return
 
