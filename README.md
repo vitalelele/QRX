@@ -7,8 +7,9 @@ Ever wondered what lurks behind those seemingly innocent QR codes? With QRX, you
 
 In a world where every scan is a potential risk, we're here to empower you with insights. Think of us as your magical lens, offering a sneak peek into the secrets concealed within QR realms. Stay savvy, stay secure! 🔍🔒
 
-This versatile tool represents the culmination of the experimental segment of my thesis within the realm of Computer Science and Technologies for Software Development at University of Bari Aldo Moro in 2024. It endeavors to encapsulate a comprehensive suite of functionalities, meticulously crafted to cater to a diverse audience ranging from end-users to seasoned developers and system integrators.
-The essence of our endeavor lies in simplifying the intricate landscape of QR code management. Picture a meticulously curated repository of controls and functionalities, seamlessly integrated into a single, powerful tool. Whether one seeks to scan QR codes with the precision of a seasoned practitioner or generate new ones with effortless finesse, this tool serves as an indispensable asset.
+<p><strong>This versatile tool represents the culmination of the experimental segment of my thesis within the realm of Computer Science and Technologies for Software Development at University of Bari Aldo Moro in 2024.</strong> It endeavors to encapsulate a comprehensive suite of functionalities, meticulously crafted to cater to a diverse audience ranging from end-users to seasoned developers and system integrators.</p>
+<p>The <u>essence of our endeavor</u> lies in <em>simplifying the intricate landscape of QR code management</em>.</p>
+<p>Picture a meticulously curated repository of controls and functionalities, <strong>seamlessly integrated into a single, powerful tool</strong>. Whether one seeks to <u>scan QR codes with the precision of a seasoned practitioner or generate new ones with effortless finesse</u>, this tool serves as an <em>indispensable asset</em>.</p>
 
 At its core, our pursuit is not merely technological; it embodies a quest for simplicity, efficiency, and security. As we traverse through the realms of QR code exploration, armed with this innovative tool, we invite fellow adventurers to join us on this expedition towards enhanced QR code security and usability.
 
