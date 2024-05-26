@@ -1,4 +1,4 @@
-# 🚀 QRX - QReXamination 🎨
+# 🚀 QRX - QReXamination 🔎🔬
 
 ## Overview
 Welcome to QRX - QReXamination, your trusty sidekick in the realm of QR codes! 🎉
@@ -12,18 +12,16 @@ The essence of our endeavor lies in simplifying the intricate landscape of QR co
 
 At its core, our pursuit is not merely technological; it embodies a quest for simplicity, efficiency, and security. As we traverse through the realms of QR code exploration, armed with this innovative tool, we invite fellow adventurers to join us on this expedition towards enhanced QR code security and usability.
 
-Continuously scanning for new horizons, just like QR codes in the digital landscape. ✨
+Continuously scanning for new horizons, just like QR codes in the digital landscape. ✨ <br>
 Per aspera ad astra.
 
-## QR Code Safety Warning
-<p align="center">
-  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=Please%20be%20careful%20when%20scanning%20this%20QR%20code!%20%F0%9F%9A%A8" alt="Safety Warning QR Code">
-</p>
-
 ## Features
-- **Scan QR codes:** Easily scan QR codes from image files.
-- **Generate QR codes:** Create custom QR codes with different types and optional logos.
-- **API Service:** Use the QRAPIX API to integrate QR code functionalities into your applications.
+
+- **Scan QR Codes:** Embark on a thrilling QR code adventure with this feature! Not only does it kickstart scans on QR codes, but it also plays detective, sniffing out any sneaky schemes or shortened links lurking within. Think of it as your QR code guardian angel! Once detected, it unleashes a squadron of API services for a deep dive analysis, culminating in a beautifully crafted HTML report. And the best part? You can enjoy front-row seats to the scan results directly within the tool interface, making security checks as fun as a rollercoaster ride!
+
+- **Generate QR Codes:** Unleash your inner QR code artist with this whimsical feature! From crafting Standard QR codes to Micro QR codes and even Frame QR codes, the possibilities are as endless as the cosmos. Choose your destination for these digital masterpieces - whether it's a specific path or the cozy confines of the default `static/qr_generated` folder. Each file is lovingly stamped with a unique timestamp, capturing the magic of its creation. It's like giving birth to your very own QR code universe! (qr_code_YYYY-MM-DD_H_M_S)
+
+- **API Service:** Ahoy there, tech explorer! Prepare to embark on a thrilling journey through the enchanted realm of the QRAPIX API service! Dive into the treasure trove of API documentation, where hidden gems of endpoint functionalities await your discovery. Whether you're a seasoned coder seeking to seamlessly integrate QR code magic into your applications or just a curious soul eager to unravel the mysteries of QR code technology, the API service promises a voyage filled with excitement and enlightenment. Strap on your adventure boots and let's set sail! 🚀🔍
 
 ## Installation
 1. **Clone the repository:**
@@ -59,8 +57,6 @@ Per aspera ad astra.
    ```
 
 2. **Follow the on-screen instructions to choose an option:**
-   - Scan a QR code
-   - Generate a QR code
 
 ## QRAPIX - ![#ff0000](https://via.placeholder.com/15/ff0000/ff0000.png) Offline
 QRX - QReXamination also provides a RESTful API service called QRAPIX, which allows you to interact with the QRX tool programmatically. The API is built using FastAPI and provides the following endpoints:
