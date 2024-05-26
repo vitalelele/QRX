@@ -10,13 +10,18 @@ class View:
     def __init__(self):
         # Initialize colorama for cross-platform colored text
         init(convert=True)
-
         self.message_about_project = (
-            f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalelele. "
-            f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs. "
-            f"Visit the GitHub repository for more information "
-            f"https://github.com/vitalelele/QRX{Style.RESET_ALL}"
+            f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalelele.\n{Style.RESET_ALL} "
+            f"It was created as part of my thesis in Computer Science and Software Production Technologies.\n"
+            f"{Fore.GREEN}This tool is the result of an in-depth study on the vulnerabilities of QR codes,{Style.RESET_ALL} "
+            f"aiming to provide a useful \nresource for quickly verifying the security of QR codes. \n"
+            f"Whether you are a user, a developer, or anyone else interested in QR code security, this tool is designed to help you.\n"
+            f"The study highlights the various risks associated with QR codes and offers this tool as a solution to mitigate these risks.\n"
+            f"By using this tool, you can scan QR codes from image files and generate QR codes from text or URLs, ensuring they are safe and secure.\n"
+            f"For more detailed information, please visit the GitHub repository: https://github.com/vitalelele/QRX.\n"
+            f"{Fore.YELLOW}I am always looking for new horizons. Ad astra per aspera.\n{Style.RESET_ALL}"
         )
+
 
     def print_banner(self):
         """
@@ -32,6 +37,7 @@ class View:
                     banners = banners_content.split('---')
                     # Select a random banner
                     random_banner = random.choice(banners)
+                    print("\n")
                     # Split the banner into lines
                     banner_lines = random_banner.split('\n')
                     for line in banner_lines:
@@ -52,11 +58,11 @@ class View:
         """
         menu = f"""
         {Fore.MAGENTA}{Style.BRIGHT}--- Select an option ---{Style.RESET_ALL}
-        1. Scan a QR code
-        2. Generate a QR code
-        3. About the project
-        4. Options
-        5. Exit
+        [1] Scan a QR code
+        [2] Generate a QR code
+        [3] About the project
+        [4] Options
+        [5] Exit
         """
         print(menu)
 
@@ -64,21 +70,23 @@ class View:
         """
         Prints information about the QRX project.
         """
-        self.print_centered(f"{Fore.BLUE}This project is a QR code scanner and generator tool developed by @vitalelele.")
-        self.print_centered(f"The tool allows you to scan QR codes from image files and generate QR codes from text or URLs.")
-        self.print_centered(f"Visit the GitHub repository for more information")
-        self.print_centered(f"https://github.com/vitalelele/QRX{Style.RESET_ALL}")
+        # Split the message into lines
+        lines = self.get_message_about_project().split('\n')
+        # Print each line centered
+        for line in lines:
+            self.print_centered(line)
+
 
     def print_options(self):
         """
         Prints the options menu.
         """
-        options = """
+        options = f"""
         Options:
-        1. Empty the 'qr_generated' folder (delete all generated QR codes)
-        2. Empty the 'report' folder (delete all reports)
-        3. Change banner randomly :)
-        4. Return to the main menu 
+        [1] Empty the {Style.BRIGHT}'qr_generated'{Style.RESET_ALL} folder {Fore.RED}{Style.BRIGHT}(delete all generated QR codes){Style.RESET_ALL}
+        [2] Empty the {Style.BRIGHT}'report'{Style.RESET_ALL} folder {Fore.RED}{Style.BRIGHT}(delete all reports){Style.RESET_ALL}
+        [3] Change banner randomly :)
+        [4] Return to the main menu 
         """
         print(options)
 
