@@ -3,7 +3,7 @@ static/qr_generated
 static/log/
 static/report/
 __pycache__/
-controllers/__pycache__/
-models/__pycache__/
-views/__pycache__/
+controller/__pycache__/
+model/__pycache__/
+view/__pycache__/
 static/__pycache__/
