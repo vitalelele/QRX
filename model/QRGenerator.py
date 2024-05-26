@@ -27,7 +27,7 @@ class QRGenerator:
             elif choice == "2":
                 self.generate_frameqr(data)
             elif choice == "3":
-                self.view.print_banner()
+                self.generate_microqr(data)
             elif choice == "4":
                 # Implement custom QR code generation here
                 print(f"{Fore.YELLOW}[!] {Style.RESET_ALL}Custom QR code generation is not yet implemented.")
@@ -47,6 +47,7 @@ class QRGenerator:
 
             # Print a success message
             print(f"{Fore.BLUE} [*]{Style.RESET_ALL}{Fore.GREEN} Standard QR code generated and saved in {self.default_folder} {Style.RESET_ALL}")
+            # print(f"The absolute path of the QR code is: {os.path.abspath(self.default_folder)}")
 
         except Exception as e:
             # Print an error message
@@ -178,29 +179,29 @@ class QRGenerator:
 
             # Check if the folder is already empty
             if not file_list:
-                print(f"{Fore.YELLOW}The folder {self.default_folder} is already empty.{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW} [!] The folder {self.default_folder} is already empty.{Style.RESET_ALL}")
                 return
 
             # Print the names of all files in the folder
-            print(f"{Fore.YELLOW}QR codes found in {self.default_folder}:{Style.RESET_ALL}")
+            print(f"{Fore.BLUE} [*]{Style.RESET_ALL} QR codes found in {self.default_folder}:{Style.RESET_ALL}")
             for file_name in file_list:
-                print(file_name)
+                print(f"        {file_name}")
             
             # Ask for confirmation before deleting
-            confirmation = input(f"{Fore.YELLOW}Do you want to delete all the QR codes in {self.default_folder}? (Y/N): {Style.RESET_ALL}").strip().upper()
+            confirmation = input(f"{Fore.YELLOW} [!] Do you want to delete all the QR codes in {self.default_folder}? (y/n): {Style.RESET_ALL}").strip().upper()
 
             if confirmation == "Y":
                 # Delete all files in the folder
                 for file_name in file_list:
                     file_path = os.path.join(self.default_folder, file_name)
                     os.remove(file_path)
-                print(f"{Fore.GREEN}All QR codes in {self.default_folder} have been deleted.{Style.RESET_ALL}")
+                print(f"{Fore.GREEN} [*] All QR codes in {self.default_folder} have been deleted.{Style.RESET_ALL}")
             else:
-                print(f"{Fore.YELLOW}Operation cancelled.{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW} [!] Operation cancelled.{Style.RESET_ALL}")
 
         except Exception as e:
             # Print an error message
-            print(f"{Fore.RED}Error during deletion: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED} [!] Error during deletion: {e}{Style.RESET_ALL}")
 
     def is_safe_path(self, path):
         """

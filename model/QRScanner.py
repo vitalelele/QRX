@@ -62,19 +62,25 @@ class QRScanner:
             if decoded_objects:
                 for obj in decoded_objects:
                     self.__setUrlCode(obj.data.decode())
-                    if not self.checkActionScheme():
-                        self.__setIpAddr()
+                    self.print_qr_code_info(obj)
+                    try:
+                        if not self.checkActionScheme():
+                            self.__setIpAddr()
+                    except Exception as e:
+                        print(f"{Fore.RED}This is not a valid URL, cannot get the IP address.{Style.RESET_ALL}")
+                        return False
+                    
                     if self.is_api_call:
                         self.control_results["QR Code info"] = { "result" : self.print_qr_code_info(obj)}
                         return True
-                
-                    self.print_qr_code_info(obj)    
+                    
                     return True
             else:
                 print(f"{Style.BRIGHT}{Fore.RED}[!] No QR code found in the file.\n{Style.RESET_ALL}")
                 return False
+            
         except Exception as e:
-            print("Error during scanning:", e)
+            print(f"{Fore.RED}Error during scanning:{Style.RESET_ALL}", e)
             return False
 
     def print_qr_code_info(self, obj):
@@ -681,16 +687,16 @@ class QRScanner:
             None
         """
         if os.path.exists("static/report"):
-            confirm = input("Are you sure you want to delete all reports? (y/n): ")
+            confirm = input(f"{Fore.YELLOW} [!] Are you sure you want to delete all reports? (y/n): {Style.RESET_ALL}")
             if confirm.lower() == "y":
                 for file in os.listdir("static/report"):
                     file_path = os.path.join("static/report", file)
                     os.remove(file_path)
-                print(f"{Fore.YELLOW}All reports deleted successfully.{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW} [!] All reports deleted successfully.{Style.RESET_ALL}")
             else:
-                print("Deletion cancelled.")
+                print(f"{Fore.RED} [!] Deletion cancelled.{Style.RESET_ALL}")
         else:
-            print(f"{Fore.RED}No reports found in the 'report' folder.{Style.RESET_ALL}")
+            print(f"{Fore.RED} [!] No reports found in the 'report' folder.{Style.RESET_ALL}")
 
     def get_control_results(self):
         """

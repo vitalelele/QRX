@@ -35,7 +35,6 @@ class Controller:
                 if self.scanner.scan_qr_code(file_path):
                     self.scanner.urlControl()
                 else:
-                    self.view.print_banner()
                     print(f"{Style.BRIGHT}{Fore.YELLOW}[!] {Style.RESET_ALL}{Fore.RED}Error scanning the QR code.\n{Style.RESET_ALL}")
             # ----------------- Generate a QR code -----------------
             elif choice == "2":
@@ -62,7 +61,9 @@ class Controller:
                 elif option_choice == "3":
                     self.view.print_banner()
                     # I added this feature for fun
-                    print(f"{Style.BRIGHT}{Fore.CYAN};) Do you like more?{Style.RESET_ALL}")
+                    message = f"{Style.BRIGHT}{Fore.CYAN};) Do you like more?{Style.RESET_ALL}"
+                    self.view.print_centered(message)
+                    
                 elif option_choice == "4":
                     self.run()
                     break
