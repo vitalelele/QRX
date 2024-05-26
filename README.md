@@ -1,9 +1,19 @@
 # 🚀 QRX - QReXamination 🎨
 
 ## Overview
-Welcome to QRX - QReXamination! This command-line tool is your ultimate companion in the world of QR codes. Whether you need to scan a QR code from an image file or generate one from scratch, we've got you covered!
+Welcome to QRX - QReXamination, your trusty sidekick in the realm of QR codes! 🎉
 
-**Important Note:** Before scanning the QR code below, make sure you trust its source. Stay safe and avoid scanning unknown QR codes to protect your privacy and security. Remember, safety first! 🔒
+Ever wondered what lurks behind those seemingly innocent QR codes? With QRX, you're equipped to unveil the mysteries hidden within. Whether it's scrutinizing URLs, deciphering intricate schemes, or unraveling mysterious text, this tool is your go-to magician's wand for QR code analysis.
+
+In a world where every scan is a potential risk, we're here to empower you with insights. Think of us as your magical lens, offering a sneak peek into the secrets concealed within QR realms. Stay savvy, stay secure! 🔍🔒
+
+This versatile tool represents the culmination of the experimental segment of my thesis within the realm of Computer Science and Technologies for Software Development at University of Bari Aldo Moro in 2024. It endeavors to encapsulate a comprehensive suite of functionalities, meticulously crafted to cater to a diverse audience ranging from end-users to seasoned developers and system integrators.
+The essence of our endeavor lies in simplifying the intricate landscape of QR code management. Picture a meticulously curated repository of controls and functionalities, seamlessly integrated into a single, powerful tool. Whether one seeks to scan QR codes with the precision of a seasoned practitioner or generate new ones with effortless finesse, this tool serves as an indispensable asset.
+
+At its core, our pursuit is not merely technological; it embodies a quest for simplicity, efficiency, and security. As we traverse through the realms of QR code exploration, armed with this innovative tool, we invite fellow adventurers to join us on this expedition towards enhanced QR code security and usability.
+
+Continuously scanning for new horizons, just like QR codes in the digital landscape. ✨
+Per aspera ad astra.
 
 ## QR Code Safety Warning
 <p align="center">
