@@ -125,24 +125,25 @@ QRX - QReXamination also provides a RESTful API service called QRAPIX, which all
 To use certain features, such as URL analysis, you may need to update the API keys in the `config.json` file located in the `static` folder. Please replace the default values (`YOUR_API_KEY`) with your own API keys obtained from the respective service provider. Below is a list of the APIs used and how to obtain an API key for each service:
 
 **VirusTotal**
-- **Documentation:** [VirusTotal API Documentation](https://developers.virustotal.com/v3.0/reference)
-- **Get API Key:** Sign up for a free account at [VirusTotal](https://www.virustotal.com/) and obtain your API key from your account settings.
+- **Documentation:** <a href="https://developers.virustotal.com/v3.0/reference" target="_blank">VirusTotal API Documentation</a>
+- **Get API Key:** Sign up for a free account at <a href="https://www.virustotal.com/" target="_blank">VirusTotal</a> and obtain your API key from your account settings.
 
 **IPQualityScore**
-- **Documentation:** [IPQualityScore API Documentation](https://www.ipqualityscore.com/documentation/proxy-detection/overview)
-- **Get API Key:** Sign up for a free account at [IPQualityScore](https://www.ipqualityscore.com/) and obtain your API key from your account settings.
+- **Documentation:** <a href="https://www.ipqualityscore.com/documentation/proxy-detection/overview" target="_blank">IPQualityScore API Documentation</a>
+- **Get API Key:** Sign up for a free account at <a href="https://www.ipqualityscore.com/" target="_blank">IPQualityScore</a> and obtain your API key from your account settings.
 
 **urlscan.io**
-- **Documentation:** [urlscan.io API Documentation](https://urlscan.io/docs/api/)
-- **Get API Key:** Sign up for a free account at [urlscan.io](https://urlscan.io/) and obtain your API key from your account settings.
+- **Documentation:** <a href="https://urlscan.io/docs/api/" target="_blank">urlscan.io API Documentation</a>
+- **Get API Key:** Sign up for a free account at <a href="https://urlscan.io/" target="_blank">urlscan.io</a> and obtain your API key from your account settings.
 
 **AbuseIPDB**
-- **Documentation:** [AbuseIPDB API Documentation](https://docs.abuseipdb.com/)
-- **Get API Key:** Sign up for a free account at [AbuseIPDB](https://www.abuseipdb.com/) and obtain your API key from your account settings.
+- **Documentation:** <a href="https://docs.abuseipdb.com/" target="_blank">AbuseIPDB API Documentation</a>
+- **Get API Key:** Sign up for a free account at <a href="https://www.abuseipdb.com/" target="_blank">AbuseIPDB</a> and obtain your API key from your account settings.
 
 **IP2Location**
-- **Documentation:** [IP2Location API Documentation](https://www.ip2location.com/web-service/ip2location)
-- **Get API Key:** Sign up for a free account at [IP2Location](https://www.ip2location.com/) and obtain your API key from your account settings.
+- **Documentation:** <a href="https://www.ip2location.com/web-service/ip2location" target="_blank">IP2Location API Documentation</a>
+- **Get API Key:** Sign up for a free account at <a href="https://www.ip2location.com/" target="_blank">IP2Location</a> and obtain your API key from your account settings.
+
 
 
 ## Environment Setup
