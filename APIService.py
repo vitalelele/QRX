@@ -3,10 +3,25 @@ from view.View import View
 from model.QRScanner import QRScanner
 from model.QRGenerator import QRGenerator
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field
 import shutil, os
 
-app = FastAPI()
+app = FastAPI(
+    title="QRAPIX",
+    description="API service for interacting with the QRX tool. It provides endpoints for scanning QR codes and generating QR codes.",
+    version="1.0",
+    terms_of_service="http://example.com/terms/",
+    contact={
+        "name": "Antonio Vitale",
+        "url": "http://example.com/contact/",
+        "email": "support@example.com",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "http://example.com/license/",
+    },
+)
+
 qr_scanner = QRScanner()
 qr_generator = QRGenerator()
 qr_scanner.is_api_call = True
@@ -14,7 +29,7 @@ qr_generator.is_api_call = True
 
 class QRCodeRequest(BaseModel):
     data: str = Field(..., example="Your data here")
-    qr_type: str = constr(regex="^(standard|microqr|frame)$") 
+    # qr_type: str = constr(regex="^(standard|microqr|frame)$") 
 
 '''
     This is the API service that will be used to interact with the QRX tool.
@@ -29,8 +44,7 @@ class QRCodeRequest(BaseModel):
     GitHub Repository: github.com/vitalelele/qrx
 '''
 
-# TODO: Create endpoints for QRX tool using FastAPI
-@app.get("/")
+@app.get("/", tags=["Information"], summary="Root Information", description="Provides general information about the QRAPIX service.")
 async def info_root():
     return {"message": "Hello, this is QRAPIX, follow the documentation to use the API service",
             "GitHub Repository": "github.com/vitalelele/qrx",
@@ -45,12 +59,12 @@ async def info_root():
             "API Endpoints": "scan_qr, generate_qr, about_project",
             }           
 
-@app.get("/about_project")
+@app.get("/about_project", tags=["Information"], summary="About the Project", description="Provides information about the QRAPIX project.")
 async def about_project():
     view = View()
     return {"message": view.get_message_about_project()}
 
-@app.post("/scan_qr")
+@app.post("/scan_qr", tags=["QR Code Operations"], summary="Scan QR Code", description="Endpoint for scanning a QR code. Upload a QR code image to get the decoded information.")
 async def scan_qr(qr_code: UploadFile = File(...)):
     if not qr_code:
         raise HTTPException(status_code=400, detail="No QR code file provided")
@@ -69,7 +83,7 @@ async def scan_qr(qr_code: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate_qr")
+@app.post("/generate_qr", tags=["QR Code Operations"], summary="Generate QR Code", description="Endpoint for generating a QR code. Provide data and optionally a logo for the QR code.")
 async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: UploadFile = File(None)):
     qr_generator.delete_temporary_qr_codes()
     try:

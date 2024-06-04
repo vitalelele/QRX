@@ -18,7 +18,7 @@ class View:
             f"Whether you are a user, a developer, or anyone else interested in QR code security, this tool is designed to help you.\n"
             f"The study highlights the various risks associated with QR codes and offers this tool as a solution to mitigate these risks.\n"
             f"By using this tool, you can scan QR codes from image files and generate QR codes from text or URLs, ensuring they are safe and secure.\n"
-            f"For more detailed information, please visit the GitHub repository: https://github.com/vitalelele/QRX.\n"
+            f"For more detailed information, please visit the GitHub repository: https://github.com/vitalelele/QRX\n"
             f"{Fore.YELLOW}I am always looking for new horizons. Ad astra per aspera.\n{Style.RESET_ALL}"
         )
 
