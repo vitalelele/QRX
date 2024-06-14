@@ -270,7 +270,7 @@ class QRGenerator:
 
         except Exception as e:
             print(f"{Fore.RED}Error during QR code generation: {e}{Style.RESET_ALL}")
-            return None
+            return e
         
     def delete_temporary_qr_codes(self):
         try:

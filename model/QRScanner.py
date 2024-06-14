@@ -200,12 +200,12 @@ class QRScanner:
             for key in relevant_keys:
                 report_message += f"    - {key}: <i>{virusTotalData.get(key, 'N/A')}</i><br>"
             
-            if stats["malicious"] > 0:
+            if stats["malicious"] > 5:
                 report_message += "<b><font color='red'>WARNING: This URL is malicious! Proceed with extreme caution!</font></b><br>"
             elif stats["malicious"] == 0:
                 report_message += "<b><font color='green'>This URL is considered safe.</font></b><br>"
             else:
-                report_message += "<b><font color='green'>This URL is considered safe.</font></b><br>"
+                report_message += "<b><font> If the 'malicious' score is not zero, it means that a search engine considers the site unreliable. Based on the number, evaluate other services to determine if the site is trustworthy. If it is zero, then the site is considered safe.  </font></b><br>"
             
             self.generate_html_report("VirusTotal", virustotalcheck, report_message)
 
@@ -224,8 +224,8 @@ class QRScanner:
             considerations = []
             for key in relevant_keys:
                 value = ipQualityData.get(key, "N/A")
-                if key in ["spamming", "malware", "phishing", "suspicious", "adult"] and value:
-                    considerations.append(f"{Fore.RED} {key.replace('_', ' ')}")
+                if key in ["spamming", "malware", "phishing", "adult"] and value:
+                    considerations.append(f"{key.replace('_', ' ')}")
                 color = Fore.RED if value in [False, "false"] else Fore.GREEN
                 ip_quality_score_result += f"        _> {Style.BRIGHT}{key}:{Style.RESET_ALL} {color}{value}{Style.RESET_ALL}\n"            
             print(ip_quality_score_result)
@@ -235,8 +235,8 @@ class QRScanner:
                 report_message += f"    - {key}: <i>{ipQualityData.get(key, 'N/A')}</i><br>"
             if considerations:
                 consideration_message = f"{Fore.YELLOW}[!]{Fore.RESET} This site contains {', '.join(considerations)}"
-                print(f"{consideration_message}\n{Fore.YELLOW}[!] This site probably contains these types of cyber attacks, be careful. {Style.RESET_ALL}")
-                report_message += f"<b><font color='red'>WARNING: This site {', '.join(considerations)}</font></b><br>"
+                print(f"{consideration_message}\n{Fore.YELLOW}[!] This site probably contains these types of cyber attacks or informations, be careful. {Style.RESET_ALL}")
+                report_message += f"<b><font color='red'>WARNING </font>: this site probably contains <font color='red'>{', '.join(considerations)}</font></b><br>"
             self.generate_html_report("IPQualityScore", ipQualityCheck, report_message)
 
         print(f"\n{Style.BRIGHT}{Fore.YELLOW}URLscanIO Analysis:{Style.RESET_ALL}")

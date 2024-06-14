@@ -3,8 +3,9 @@ from view.View import View
 from model.QRScanner import QRScanner
 from model.QRGenerator import QRGenerator
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
-import shutil, os
+from pydantic import BaseModel, constr, ValidationError, Field
+from fastapi.middleware.cors import CORSMiddleware
+import shutil, os, logging
 
 app = FastAPI(
     title="QRAPIX",
@@ -22,6 +23,18 @@ app = FastAPI(
     },
 )
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+# Allow all origins for CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 qr_scanner = QRScanner()
 qr_generator = QRGenerator()
 qr_scanner.is_api_call = True
@@ -29,7 +42,7 @@ qr_generator.is_api_call = True
 
 class QRCodeRequest(BaseModel):
     data: str = Field(..., example="Your data here")
-    # qr_type: str = constr(regex="^(standard|microqr|frame)$") 
+    qr_type: str = constr(regex="^(standard|microqr|frame)$") 
 
 '''
     This is the API service that will be used to interact with the QRX tool.
@@ -98,6 +111,6 @@ async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: Upl
             response = FileResponse(temp_file_path, media_type="image/png", filename=os.path.basename(temp_file_path))
             return response
         else:
-            raise HTTPException(status_code=500, detail="QR code generation failed")
+            raise HTTPException(status_code=500, detail="QR code generation failed: " + e)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
