@@ -84,6 +84,7 @@ class QRScanner:
             return False
 
     def print_qr_code_info(self, obj):
+
         """
         Prints information about a decoded QR code.
 
@@ -161,43 +162,84 @@ class QRScanner:
             print(f"{Fore.RED} [!] {Style.RESET_ALL}{Style.BRIGHT}{Fore.YELLOW}Be careful when opening a scheme, it could open some external services.{Style.RESET_ALL}")
             self.control_results["Action Scheme"] = True
             self.generate_html_report("Action Scheme", True, "This QR code contains an <b>action scheme</b>.")
-            # if it's an action scheme we don't need to continue with the control
             return
-        
-        # Check if the URL is a short URL, using the method checkShortUrl()
+
         is_short_url = self.checkShortUrl()
         short_url_result = f"{Style.BRIGHT} URL Short: {Fore.GREEN if is_short_url else Fore.RED}{'true' if is_short_url else 'false'}{Style.RESET_ALL}"
         print(short_url_result)
         self.control_results["URL Short"] = is_short_url
         self.generate_html_report("URL Short", not is_short_url, "The URL is a <b>short URL</b>" if is_short_url else "The URL is <b>not a short URL</b>")
 
-        # Check if the URL is safe using the method checkVirusTotal()
-        virustotalcheck, error_code = self.checkVirusTotal()
+        print(f"\n{Style.BRIGHT}{Fore.YELLOW}VirusTotal Analysis:{Style.RESET_ALL}")
+        virustotalcheck, error_code, virusTotalData = self.checkVirusTotal()
         if error_code:
-            virust_total_result = f"{Fore.RED} VirusTotal API: error, see the log file in static/log for further information{Style.RESET_ALL}"
+            virust_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.RED}request failed{Style.RESET_ALL}"
             print(virust_total_result)
             self.control_results["VirusTotal"] = "error"
             self.generate_html_report("VirusTotal", False, "Error while checking the URL with VirusTotal")
         else:
-            virust_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN if virustotalcheck else Fore.RED}{'safe' if virustotalcheck else 'not safe'}{Style.RESET_ALL}"
+            virust_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN}request success{Style.RESET_ALL}\n"
+            virust_total_result += f"     {Style.BRIGHT}VirusTotal result:{Style.RESET_ALL}\n"
+            relevant_keys = ["last_analysis_stats", "total_votes", "categories", "reputation", "last_http_response_code", "last_final_url"]
+            stats = virusTotalData["last_analysis_stats"]
+            for key in relevant_keys:
+                value = virusTotalData.get(key, "N/A")
+                color = Fore.RED if key == "last_analysis_stats" and stats["malicious"] > 0 else Fore.GREEN
+                virust_total_result += f"        _> {Style.BRIGHT}{key}:{Style.RESET_ALL} {color}{value}{Style.RESET_ALL}\n"
+            
+            if stats["malicious"] > 5:
+                virust_total_result += f"{Style.BRIGHT}{Fore.YELLOW} [!] {Fore.RED}WARNING: This URL is malicious! Proceed with extreme caution!{Style.RESET_ALL}\n"
+            elif stats["malicious"] == 0:
+                virust_total_result += f"{Style.BRIGHT}{Fore.GREEN} This URL is considered safe.{Style.RESET_ALL}\n"
+            else:
+                virust_total_result += f"{Fore.YELLOW} [!] If the 'malicious' score is not zero, it means that a search engine considers the site unreliable.\n [*] Based on the number, evaluate other services to determine if the site is trustworthy.\n [*] If it is zero, then the site is considered safe. {Style.RESET_ALL}\n"
+            
             print(virust_total_result)
-            self.control_results["VirusTotal"] = "safe" if virustotalcheck else "not safe"
-            self.generate_html_report("VirusTotal", virustotalcheck, "The URL is <b>safe</b>" if virustotalcheck else "The URL is <b>not safe</b>")
+            self.control_results["VirusTotal"] = virusTotalData
+            report_message = f"<b><u>VirusTotal result:</b></u><br>"
+            for key in relevant_keys:
+                report_message += f"    - {key}: <i>{virusTotalData.get(key, 'N/A')}</i><br>"
+            
+            if stats["malicious"] > 0:
+                report_message += "<b><font color='red'>WARNING: This URL is malicious! Proceed with extreme caution!</font></b><br>"
+            elif stats["malicious"] == 0:
+                report_message += "<b><font color='green'>This URL is considered safe.</font></b><br>"
+            else:
+                report_message += "<b><font color='green'>This URL is considered safe.</font></b><br>"
+            
+            self.generate_html_report("VirusTotal", virustotalcheck, report_message)
 
-        # Check if the URL is safe using the method checkIpQualityScore()
-        ipQualityCheck, error_code = self.checkIpQualityScore()
+        print(f"\n{Style.BRIGHT}{Fore.YELLOW}IPQualityScore Analysis:{Style.RESET_ALL}")
+        ipQualityCheck, error_code, ipQualityData = self.checkIpQualityScore()
         if error_code:
-            ip_quality_score_result = f"{Fore.RED} IPQualityScore API: error, see the log file in static/log for further information{Style.RESET_ALL}"
+            ip_quality_score_result = f"{Style.BRIGHT} IPQualityScore API: {Fore.RED}request failed{Style.RESET_ALL}"
             print(ip_quality_score_result)
             self.control_results["IPQualityScore"] = "error"
             self.generate_html_report("IpQualityScore", False, "Error while checking the URL with IpQualityScore")
         else:
-            ip_quality_score_result = f"{Style.BRIGHT} IPQualityScore API: {Fore.GREEN if ipQualityCheck else Fore.RED}{'safe' if ipQualityCheck else 'not safe'}{Style.RESET_ALL}"
+            ip_quality_score_result = f"{Style.BRIGHT} IPQualityScore API: {Fore.GREEN}request success{Style.RESET_ALL}\n"
+            ip_quality_score_result += f"     {Style.BRIGHT}IPQualityScore result:{Style.RESET_ALL}\n"
+            relevant_keys = ["message", "success", "unsafe", "domain", "root_domain", "content_type", "page_size", "domain_rank",
+                            "dns_valid", "spamming", "malware", "phishing", "suspicious", "adult", "risk_score", "domain_trust", "page_title"]
+            considerations = []
+            for key in relevant_keys:
+                value = ipQualityData.get(key, "N/A")
+                if key in ["spamming", "malware", "phishing", "suspicious", "adult"] and value:
+                    considerations.append(f"{Fore.RED} {key.replace('_', ' ')}")
+                color = Fore.RED if value in [False, "false"] else Fore.GREEN
+                ip_quality_score_result += f"        _> {Style.BRIGHT}{key}:{Style.RESET_ALL} {color}{value}{Style.RESET_ALL}\n"            
             print(ip_quality_score_result)
-            self.control_results["IPQualityScore"] = "safe" if ipQualityCheck else "not safe"
-            self.generate_html_report("IPQualityScore", ipQualityCheck, "The URL is <b>safe</b>" if ipQualityCheck else "The URL is <b>not safe</b>")
+            self.control_results["IPQualityScore"] = ipQualityData
+            report_message = f"<b><u>IPQualityScore result:</b></u><br>"
+            for key in relevant_keys:
+                report_message += f"    - {key}: <i>{ipQualityData.get(key, 'N/A')}</i><br>"
+            if considerations:
+                consideration_message = f"{Fore.YELLOW}[!]{Fore.RESET} This site contains {', '.join(considerations)}"
+                print(f"{consideration_message}\n{Fore.YELLOW}[!] This site probably contains these types of cyber attacks, be careful. {Style.RESET_ALL}")
+                report_message += f"<b><font color='red'>WARNING: This site {', '.join(considerations)}</font></b><br>"
+            self.generate_html_report("IPQualityScore", ipQualityCheck, report_message)
 
-        # Check if the URL is safe using the method checkURLscanIO()
+        print(f"\n{Style.BRIGHT}{Fore.YELLOW}URLscanIO Analysis:{Style.RESET_ALL}")
         error_code, checkUrlScanIO = self.checkURLscanIO()
         if error_code:
             check_urlscanio_result = f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}"
@@ -208,9 +250,9 @@ class QRScanner:
             check_urlscanio_result = f"{Style.BRIGHT} URLscanIO API: {Fore.GREEN}request success{Style.RESET_ALL}\n{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}"
             print(check_urlscanio_result)
             self.control_results["URLscanIO"] = checkUrlScanIO
-            self.generate_html_report("URLscanIO", True, f"Visit the <b><a href='{checkUrlScanIO}' target='_blank'>URLscanIO</b></a> website for further information: " + checkUrlScanIO)
+            self.generate_html_report("URLscanIO", True, f"Visit the <b><a href='{checkUrlScanIO}' target='_blank'>URLscanIO</b></a> website for further information.")
 
-        # Check if the IP address is found in the AbuseIPDB database using the method checkAbuseIPDB()
+        print(f"\n{Style.BRIGHT}{Fore.YELLOW}AbuseIPDB Analysis:{Style.RESET_ALL}")
         error_code, checkAbuseIPDB_result = self.checkAbuseIPDB()
         if error_code:
             print_checkAbuseIPDB = f"{Fore.RED} AbuseIPDB API: error, see the log file in static/log for further information{Style.RESET_ALL}"
@@ -228,22 +270,32 @@ class QRScanner:
                                         f"        _> Is Tor: {Fore.RED if checkAbuseIPDB_result['isTor'] is False else ''}{checkAbuseIPDB_result['isTor']}{Style.RESET_ALL}\n" \
                                         f"        _> Total Reports: {Fore.GREEN if checkAbuseIPDB_result['totalReports'] < 15 else ''}{checkAbuseIPDB_result['totalReports']}{Style.RESET_ALL}"
                 print(print_checkAbuseIPDB)
+                considerations = []
+                if checkAbuseIPDB_result.get('isTor', False):
+                    considerations.append(f"<font color='red'>utilizes the Tor network</font>")
+                if checkAbuseIPDB_result.get('totalReports', 0) > 0:
+                    considerations.append(f"<font color='red'>has received {checkAbuseIPDB_result['totalReports']} reports</font>")
+                if considerations:
+                    consideration_message = f"{Fore.YELLOW}[!]{Fore.RESET} This site {', '.join(considerations)}"
+                    print(consideration_message)
                 self.control_results["AbuseIPDB"] = checkAbuseIPDB_result
-                # Generate the HTML report for the AbuseIPDB check, need to save into the report_data list
-                self.generate_html_report("AbuseIPDB", True, f"<b><u>AbuseIPDB result:</b></u><br>"
-                                                            f"    - Ip Address: <i>{checkAbuseIPDB_result['ipAddress']}</i><br>"
-                                                            f"    - Is Whitelisted: <i>{checkAbuseIPDB_result['isWhitelisted']}</i><br>"
-                                                            f"    - ISP: <i>{checkAbuseIPDB_result['isp']}</i><br>"
-                                                            f"    - Domain: <i>{checkAbuseIPDB_result['domain']}</i><br>"
-                                                            f"    - Is Tor: <i>{checkAbuseIPDB_result['isTor']}</i><br>"
-                                                            f"    - Total Reports: <i>{checkAbuseIPDB_result['totalReports']}")
+                report_message = f"<b><u>AbuseIPDB result:</b></u><br>"
+                report_message += f"    - Ip Address: <i>{checkAbuseIPDB_result['ipAddress']}</i><br>"
+                report_message += f"    - Is Whitelisted: <i>{checkAbuseIPDB_result['isWhitelisted']}</i><br>"
+                report_message += f"    - ISP: <i>{checkAbuseIPDB_result['isp']}</i><br>"
+                report_message += f"    - Domain: <i>{checkAbuseIPDB_result['domain']}</i><br>"
+                report_message += f"    - Is Tor: <i>{checkAbuseIPDB_result['isTor']}</i><br>"
+                report_message += f"    - Total Reports: <i>{checkAbuseIPDB_result['totalReports']}</i><br>"
+                if considerations:
+                    report_message += f"<b><font color='red'>WARNING: This site {', '.join(considerations)}</font></b><br>"
+                self.generate_html_report("AbuseIPDB", True, report_message)
             else:
                 print_checkAbuseIPDB = f"{Fore.RED}{Style.BRIGHT}No data available.{Style.RESET_ALL}"
                 print(print_checkAbuseIPDB)
                 self.control_results["AbuseIPDB"] = "No data available"
                 self.generate_html_report("AbuseIPDB", False, "No data available for the IP address in the AbuseIPDB database.")
 
-        # Check the IP location using the method checkIp2Location()
+        print(f"\n{Style.BRIGHT}{Fore.YELLOW}IP2Location Analysis:{Style.RESET_ALL}")
         error_code, checkIp2Location_result = self.checkIp2Location()
         if error_code:
             print_checkIp2Location_result = f"{Fore.RED} IP2Location API: error, see the log file in static/log for further information{Style.RESET_ALL}"
@@ -271,17 +323,12 @@ class QRScanner:
                                                             f"    - Longitude: <i>{checkIp2Location_result['longitude']}</i><br>"
                                                             f"    - Zip Code: <i>{checkIp2Location_result['zip_code']}</i><br>"
                                                             f"    - Is Proxy: <i>{checkIp2Location_result['is_proxy']}</i>")
-            
-        # more control coming soon :)
-        print(f"{Style.BRIGHT}\n More control coming soon...{Style.RESET_ALL}")
 
-        # Save the report to an HTML file
         self.save_report()
-        print(f"{Style.BRIGHT}{Fore.BLUE} [*]{Fore.GREEN} Report saved to {self.report_file_path}{Style.RESET_ALL}")
+        print(f"{Style.BRIGHT}{Fore.BLUE}\n [*]{Fore.GREEN} Report saved to {self.report_file_path}{Style.RESET_ALL}")
         self.view.print_banner()
-
         return
-
+    
     def getUrlCode(self):
         """
         Returns the decoded URL from the QR code.
@@ -323,49 +370,35 @@ class QRScanner:
             return any(self.urlCode.startswith(shortened) for shortened in short_urls)
 
     def checkVirusTotal(self):
-        """
-        Checks the URL against the VirusTotal API for malicious content.
-        Refer to the VirusTotal API documentation for more information: https://docs.virustotal.com/reference/urls-votes-get
-    
-        Also see: https://docs.virustotal.com/reference/url#url-identifiers
-        Basically Base64 encode the URL and use it as the URL ID.
-
-        Returns:
-            bool: True if the URL is safe, False if it is flagged as malicious.
-            bool: True if there was an error while checking the URL with VirusTotal, False otherwise.
-        """
-
         # Encode the URL using Base64, refer to the VirusTotal API documentation for more information
         url_id = base64.urlsafe_b64encode(self.urlCode.encode()).decode().strip("=")
 
-        # Set the limit for the number of votes to retrieve
-        vote_limit = 10 # You can adjust this value as needed, more votes may take longer to process but provide more information
-
         # Construct the URL for the VirusTotal API
-        url = f"https://www.virustotal.com/api/v3/urls/{url_id}/votes?limit={vote_limit}" 
+        url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
         # Set the headers with the API key
         headers = {
-            "accept":"application/json",
-            "x-apikey": f"{self.api_manager.get_api_key('virustotal')}"
-            ""
-            }
-        
-        # This URL return a list of Vote objects that contain the verdict of the URL
-        # Refer to: https://docs.virustotal.com/reference/vote-object
+            "accept": "application/json",
+            "x-apikey": self.api_manager.get_api_key('virustotal')
+        }
+
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            votes = response.json()["data"]
-            for vote in votes:
-                if vote["attributes"]["verdict"] != "harmless":
-                    return False, False
-            return True, False
+            data = response.json()["data"]["attributes"]
+            # Filter relevant keys
+            relevant_keys = ["last_analysis_stats", "total_votes", "categories", "reputation", "last_http_response_code", "last_final_url"]
+            filtered_data = {key: data.get(key, "N/A") for key in relevant_keys}
+
+            # Check the analysis results
+            stats = data["last_analysis_stats"]
+            # Check if the URL is malicious
+            # 5 is the threshold for the number of engines that flagged the URL as malicious
+            is_malicious = stats["malicious"] > 0
+            return not is_malicious, False, filtered_data
         else:
-            # print(f"{Fore.RED}Error checking the URL with VirusTotal: {response.text}{Style.RESET_ALL}")
-            # This basically means an error occurred while checking the URL with VirusTotal, maybe is not an URL
             error_message = response.text
             self.save_error_to_log("VirusTotal", error_message)
-            return False, True          
-
+            return False, True, None
+        
     def checkIpQualityScore(self):
         """
         Checks the URL against the IpQualityScore API for malicious content.
@@ -384,13 +417,13 @@ class QRScanner:
         if response.status_code == 200:
             data = response.json()
             if data["unsafe"] == False:
-                return True, False
+                return True, False, data
             else:
-                return False, False
+                return False, False, data
         else:
             error_message = response.text
             self.save_error_to_log("IpQualityScore", error_message)
-            return False, True
+            return False, True, None
 
     def checkURLscanIO(self):
         """
