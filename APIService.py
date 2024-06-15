@@ -68,7 +68,7 @@ async def info_root():
             "API Description": "API service for QRX tool",
             "API Status": "Active",
             "API License": "MIT",
-            "API Contact": "",
+            "API Contact": "vitaleleinfo@gmail.com",
             "API Endpoints": "scan_qr, generate_qr, about_project",
             }           
 
@@ -77,7 +77,7 @@ async def about_project():
     view = View()
     return {"message": view.get_message_about_project()}
 
-@app.post("/scan_qr", tags=["QR Code Operations"], summary="Scan QR Code", description="Endpoint for scanning a QR code. Upload a QR code image to get the decoded information.")
+@app.post("/scan_qr", tags=["QR Code Operations"], summary="Scan QR Code", description="Endpoint for scanning a QR code. Upload a QR code image to get analysis result.")
 async def scan_qr(qr_code: UploadFile = File(...)):
     if not qr_code:
         raise HTTPException(status_code=400, detail="No QR code file provided")
@@ -96,7 +96,7 @@ async def scan_qr(qr_code: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate_qr", tags=["QR Code Operations"], summary="Generate QR Code", description="Endpoint for generating a QR code. Provide data and optionally a logo for the QR code.")
+@app.post("/generate_qr", tags=["QR Code Operations"], summary="Generate QR Code", description="Endpoint for generating a QR code.")
 async def generate_qr(data: str = Form(...), qr_type: str = Form(...), logo: UploadFile = File(None)):
     qr_generator.delete_temporary_qr_codes()
     try:
