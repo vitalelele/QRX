@@ -26,13 +26,13 @@ app = FastAPI(
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-# Allow all origins for CORS
+# Security middleware for CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Specify allowed origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Specify allowed HTTP methods
+    allow_headers=["*"],  # Specify allowed headers
 )
 
 qr_scanner = QRScanner()
@@ -41,8 +41,7 @@ qr_scanner.is_api_call = True
 qr_generator.is_api_call = True
 
 class QRCodeRequest(BaseModel):
-    data: str = Field(..., example="Your data here")
-    qr_type: str = constr(regex="^(standard|microqr|frame)$") 
+    data: str = Field(strip_whitespace=True, min_length=1, max_length=1000)  # Validation for length and content
 
 '''
     This is the API service that will be used to interact with the QRX tool.

@@ -1,9 +1,11 @@
+import sys, time, requests, base64, os, urllib, json, socket, datetime, re, mimetypes, tempfile
 from pyzbar.pyzbar import decode
 from PIL import Image
 from colorama import init, Fore, Style
-import sys, time, requests, base64, os, urllib, json, socket, datetime, re
 from model.APIManager import APIManager
 from view.View import View
+from urllib.parse import urlparse
+
 
 """
 A class that represents a QR code scanner.
@@ -153,6 +155,112 @@ class QRScanner:
         """
         print(f"\n{Style.BRIGHT}{Fore.YELLOW}QR Code URL Analysis Result:{Style.RESET_ALL}")
 
+        download_info = self.checkDownload()
+        if download_info['is_download']:
+            download_warning = f"{Style.BRIGHT}{Fore.RED} [!] WARNING: This QR code initiates a download. Proceed with extreme caution!{Style.RESET_ALL}"
+            print(download_warning)
+            print(f"     Filename: {Fore.CYAN}{download_info['filename']}{Style.RESET_ALL}")
+            print(f"     Site: {Fore.CYAN}{download_info['site']}{Style.RESET_ALL}")
+            print(f"     Content Type: {Fore.CYAN}{download_info['content_type']}{Style.RESET_ALL}")
+            print(f"     Content Length: {Fore.CYAN}{download_info['content_length']}{Style.RESET_ALL}")
+
+            user_response = input(f"{Fore.YELLOW}Do you want to download and scan this file? (y/n): {Style.RESET_ALL}")
+            if user_response.lower() != 'y':
+                print(f"{Fore.RED}Download aborted by the user.{Style.RESET_ALL}")
+                return
+
+            # Scan the downloaded file
+            scan_results = self.scan_file_virustotal(download_info['file_path'])
+            print(f"\n{Style.BRIGHT}{Fore.YELLOW}VirusTotal File Scan Results:{Style.RESET_ALL}")
+
+            analysis_stats = scan_results.get('attributes', {}).get('stats', {})
+            file_info = scan_results.get('meta', {}).get('file_info', {})
+            results = scan_results.get('attributes', {}).get('results', {})
+
+            malicious_count = analysis_stats.get('malicious', 0)
+            suspicious_count = analysis_stats.get('suspicious', 0)
+            undetected_count = analysis_stats.get('undetected', 0)
+            harmless_count = analysis_stats.get('harmless', 0)
+            timeout_count = analysis_stats.get('timeout', 0)
+            confirmed_timeout_count = analysis_stats.get('confirmed-timeout', 0)
+            failure_count = analysis_stats.get('failure', 0)
+            type_unsupported_count = analysis_stats.get('type-unsupported', 0)
+
+            print(f"SHA-256: {Fore.CYAN}{file_info.get('sha256')}{Style.RESET_ALL}")
+            print(f"MD5: {Fore.CYAN}{file_info.get('md5')}{Style.RESET_ALL}")
+            print(f"SHA-1: {Fore.CYAN}{file_info.get('sha1')}{Style.RESET_ALL}")
+            print(f"File Size: {Fore.CYAN}{file_info.get('size')} bytes{Style.RESET_ALL}")
+
+            first_submission_date = scan_results.get('data', {}).get('attributes', {}).get('first_submission_date')
+            last_analysis_date = scan_results.get('data', {}).get('attributes', {}).get('last_analysis_date')
+            times_submitted = scan_results.get('data', {}).get('attributes', {}).get('times_submitted')
+            total_votes = scan_results.get('data', {}).get('attributes', {}).get('total_votes', {})
+            total_votes_harmless = total_votes.get('harmless', 0)
+            total_votes_malicious = total_votes.get('malicious', 0)
+
+            if first_submission_date:
+                print(f"First Submission Date: {Fore.CYAN}{datetime.datetime.fromtimestamp(first_submission_date)}{Style.RESET_ALL}")
+            else:
+                print(f"First Submission Date: {Fore.CYAN}N/A{Style.RESET_ALL}")
+
+            if last_analysis_date:
+                print(f"Last Analysis Date: {Fore.CYAN}{datetime.datetime.fromtimestamp(last_analysis_date)}{Style.RESET_ALL}")
+            else:
+                print(f"Last Analysis Date: {Fore.CYAN}N/A{Style.RESET_ALL}")
+
+            print(f"Times Submitted: {Fore.CYAN}{times_submitted}{Style.RESET_ALL}")
+            print(f"Total Votes - Harmless: {Fore.GREEN}{total_votes_harmless}{Style.RESET_ALL}")
+            print(f"Total Votes - Malicious: {Fore.RED}{total_votes_malicious}{Style.RESET_ALL}")
+
+            print(f"\n{Style.BRIGHT}{Fore.YELLOW}Analysis Stats:{Style.RESET_ALL}")
+            print(f"    Malicious: {Fore.RED if malicious_count > 0 else Fore.GREEN}{malicious_count}{Style.RESET_ALL}")
+            print(f"    Suspicious: {Fore.RED if suspicious_count > 0 else Fore.GREEN}{suspicious_count}{Style.RESET_ALL}")
+            print(f"    Undetected: {Fore.GREEN}{undetected_count}{Style.RESET_ALL}")
+            print(f"    Harmless: {Fore.GREEN}{harmless_count}{Style.RESET_ALL}")
+            print(f"    Timeout: {Fore.YELLOW if timeout_count > 0 else Fore.GREEN}{timeout_count}{Style.RESET_ALL}")
+            print(f"    Confirmed Timeout: {Fore.YELLOW if confirmed_timeout_count > 0 else Fore.GREEN}{confirmed_timeout_count}{Style.RESET_ALL}")
+            print(f"    Failure: {Fore.YELLOW if failure_count > 0 else Fore.GREEN}{failure_count}{Style.RESET_ALL}")
+            print(f"    Type Unsupported: {Fore.YELLOW if type_unsupported_count > 0 else Fore.GREEN}{type_unsupported_count}{Style.RESET_ALL}")
+
+            if malicious_count > 5:
+                print(f"{Style.BRIGHT}{Fore.YELLOW} [!] {Fore.RED}WARNING: This file is considered malicious by multiple engines! Proceed with extreme caution!{Style.RESET_ALL}\n")
+            elif malicious_count == 0:
+                print(f"{Style.BRIGHT}{Fore.GREEN} This file is considered safe.{Style.RESET_ALL}\n")
+            else:
+                print(f"{Fore.YELLOW} [!] If the 'malicious' score is not zero, it means that some engines consider the file unsafe.{Style.RESET.ALL}\n")
+
+            self.generate_html_report("VirusTotal File Scan", True, f"""
+            <b>File Scan Results:</b><br>
+            SHA-256: {file_info.get('sha256')}<br>
+            MD5: {file_info.get('md5')}<br>
+            SHA-1: {file_info.get('sha1')}<br>
+            File Size: {file_info.get('size')} bytes<br>
+            First Submission Date: {datetime.datetime.fromtimestamp(first_submission_date) if first_submission_date else 'N/A'}<br>
+            Last Analysis Date: {datetime.datetime.fromtimestamp(last_analysis_date) if last_analysis_date else 'N/A'}<br>
+            Times Submitted: {times_submitted}<br>
+            Total Votes - Harmless: {total_votes_harmless}<br>
+            Total Votes - Malicious: {total_votes_malicious}<br>
+            <b>Analysis Stats:</b><br>
+            Malicious: {malicious_count}<br>
+            Suspicious: {suspicious_count}<br>
+            Undetected: {undetected_count}<br>
+            Harmless: {harmless_count}<br>
+            Timeout: {timeout_count}<br>
+            Confirmed Timeout: {confirmed_timeout_count}<br>
+            Failure: {failure_count}<br>
+            Type Unsupported: {type_unsupported_count}<br>
+            """)
+
+            # Delete the temporary file
+            if os.path.exists(download_info['file_path']):
+                os.remove(download_info['file_path'])
+            
+            self.save_report()
+            print(f"{Style.BRIGHT}{Fore.BLUE}\n [*]{Fore.GREEN} Report saved to {self.report_file_path}{Style.RESET_ALL}")
+            self.view.print_banner()
+            return
+
+
         is_action_scheme = self.checkActionScheme()
         action_scheme_result = f"{Style.BRIGHT}{Fore.YELLOW} [!] {Style.RESET_ALL}Action Scheme: {Fore.GREEN if is_action_scheme else Fore.RED}{'true' if is_action_scheme else 'false'}{Style.RESET_ALL}"
         print(action_scheme_result)
@@ -173,28 +281,28 @@ class QRScanner:
         print(f"\n{Style.BRIGHT}{Fore.YELLOW}VirusTotal Analysis:{Style.RESET_ALL}")
         virustotalcheck, error_code, virusTotalData = self.checkVirusTotal()
         if error_code:
-            virust_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.RED}request failed{Style.RESET_ALL}"
-            print(virust_total_result)
+            virus_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.RED}request failed{Style.RESET_ALL}"
+            print(virus_total_result)
             self.control_results["VirusTotal"] = "error"
             self.generate_html_report("VirusTotal", False, "Error while checking the URL with VirusTotal")
         else:
-            virust_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN}request success{Style.RESET_ALL}\n"
-            virust_total_result += f"     {Style.BRIGHT}VirusTotal result:{Style.RESET_ALL}\n"
+            virus_total_result = f"{Style.BRIGHT} VirusTotal API: {Fore.GREEN}request success{Style.RESET_ALL}\n"
+            virus_total_result += f"     {Style.BRIGHT}VirusTotal result:{Style.RESET_ALL}\n"
             relevant_keys = ["last_analysis_stats", "total_votes", "categories", "reputation", "last_http_response_code", "last_final_url"]
             stats = virusTotalData["last_analysis_stats"]
             for key in relevant_keys:
                 value = virusTotalData.get(key, "N/A")
                 color = Fore.RED if key == "last_analysis_stats" and stats["malicious"] > 0 else Fore.GREEN
-                virust_total_result += f"        _> {Style.BRIGHT}{key}:{Style.RESET_ALL} {color}{value}{Style.RESET_ALL}\n"
+                virus_total_result += f"        _> {Style.BRIGHT}{key}:{Style.RESET_ALL} {color}{value}{Style.RESET_ALL}\n"
             
             if stats["malicious"] > 5:
-                virust_total_result += f"{Style.BRIGHT}{Fore.YELLOW} [!] {Fore.RED}WARNING: This URL is malicious! Proceed with extreme caution!{Style.RESET_ALL}\n"
+                virus_total_result += f"{Style.BRIGHT}{Fore.YELLOW} [!] {Fore.RED}WARNING: This URL is malicious! Proceed with extreme caution!{Style.RESET_ALL}\n"
             elif stats["malicious"] == 0:
-                virust_total_result += f"{Style.BRIGHT}{Fore.GREEN} This URL is considered safe.{Style.RESET_ALL}\n"
+                virus_total_result += f"{Style.BRIGHT}{Fore.GREEN} This URL is considered safe.{Style.RESET_ALL}\n"
             else:
-                virust_total_result += f"{Fore.YELLOW} [!] If the 'malicious' score is not zero, it means that a search engine considers the site unreliable.\n [*] Based on the number, evaluate other services to determine if the site is trustworthy.\n [*] If it is zero, then the site is considered safe. {Style.RESET_ALL}\n"
+                virus_total_result += f"{Fore.YELLOW} [!] If the 'malicious' score is not zero, it means that a search engine considers the site unreliable.\n [*] Based on the number, evaluate other services to determine if the site is trustworthy.\n [*] If it is zero, then the site is considered safe. {Style.RESET_ALL}\n"
             
-            print(virust_total_result)
+            print(virus_total_result)
             self.control_results["VirusTotal"] = virusTotalData
             report_message = f"<b><u>VirusTotal result:</b></u><br>"
             for key in relevant_keys:
@@ -369,6 +477,71 @@ class QRScanner:
             # Check if the URL starts with any of the short URLs
             return any(self.urlCode.startswith(shortened) for shortened in short_urls)
 
+    def checkDownload(self):
+        """
+        Checks if the URL points to a downloadable file and returns additional information.
+
+        This method makes a HEAD request to the URL and inspects the 'Content-Type' header to determine
+        if the URL points to a downloadable file. It also retrieves the filename, site initiating the download,
+        and other relevant information.
+
+        Returns:
+            dict: A dictionary containing the following keys:
+                - is_download (bool): True if the URL points to a downloadable file, False otherwise.
+                - filename (str): The name of the downloadable file.
+                - site (str): The site initiating the download.
+                - content_type (str): The content type of the file.
+                - content_length (str): The size of the file in bytes.
+                - file_path (str): The path to the downloaded file.
+        """
+        download_info = {
+            "is_download": False,
+            "filename": None,
+            "site": None,
+            "content_type": None,
+            "content_length": None,
+            "file_path": None
+        }
+
+        try:
+            response = requests.head(self.urlCode, allow_redirects=True)
+            content_type = response.headers.get('Content-Type', '')
+            content_length = response.headers.get('Content-Length', 'Unknown size')
+            parsed_url = urlparse(self.urlCode)
+            site = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            
+            if content_type:
+                main_type = content_type.split('/')[0]
+                if main_type in ['application', 'audio', 'video', 'image']:
+                    filename = None
+                    if 'Content-Disposition' in response.headers:
+                        content_disposition = response.headers['Content-Disposition']
+                        filename = re.findall('filename="?([^"]+)"?', content_disposition)
+                        if filename:
+                            filename = filename[0]
+                    if not filename:
+                        filename = os.path.basename(parsed_url.path)
+                    
+                    # Create a temporary file
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                        tmp_file.write(requests.get(self.urlCode).content)
+                        tmp_file_path = tmp_file.name
+                    
+                    download_info.update({
+                        "is_download": True,
+                        "filename": filename,
+                        "site": site,
+                        "content_type": content_type,
+                        "content_length": content_length,
+                        "file_path": tmp_file_path
+                    })
+                    
+                    return download_info
+        except requests.RequestException as e:
+            download_info.update({"error": str(e)})
+        
+        return download_info
+
     def checkVirusTotal(self):
         # Encode the URL using Base64, refer to the VirusTotal API documentation for more information
         url_id = base64.urlsafe_b64encode(self.urlCode.encode()).decode().strip("=")
@@ -532,6 +705,53 @@ class QRScanner:
         else:
             return True
 
+    def scan_file_virustotal(self, file_path):
+        """
+        Uploads the file to VirusTotal for scanning and retrieves the scan results.
+
+        Args:
+            file_path (str): The path to the file to be scanned.
+
+        Returns:
+            dict: The scan results from VirusTotal.
+        """
+        url = "https://www.virustotal.com/api/v3/files"
+        headers = {
+            "x-apikey": self.api_manager.get_api_key('virustotal')
+        }
+
+        with open(file_path, "rb") as file:
+            files = {"file": (os.path.basename(file_path), file)}
+            response = requests.post(url, headers=headers, files=files)
+            if response.status_code == 200:
+                data = response.json()
+                analysis_id = data["data"]["id"]
+                return self.get_file_scan_report(analysis_id)
+            else:
+                self.save_error_to_log("VirusTotal", response.text)
+                return None
+
+    def get_file_scan_report(self, analysis_id):
+        """
+        Retrieves the file scan report from VirusTotal.
+
+        Args:
+            analysis_id (str): The analysis ID of the file scan.
+
+        Returns:
+            dict: The scan report from VirusTotal.
+        """
+        url = f"https://www.virustotal.com/api/v3/analyses/{analysis_id}"
+        headers = {
+            "x-apikey": self.api_manager.get_api_key('virustotal')
+        }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            self.save_error_to_log("VirusTotal", response.text)
+            return None
+
     def urlScan_APIservice(self):
         """
         This method is used for making API calls.
@@ -541,6 +761,22 @@ class QRScanner:
         Returns:
             None
         """
+
+        # Check if the URL leads to a download
+        download_info = self.checkDownload()
+        if download_info['is_download']:
+            download_warning = {
+                "warning": "This QR code initiates a download. Proceed with extreme caution!",
+                "filename": download_info['filename'],
+                "site": download_info['site'],
+                "content_type": download_info['content_type'],
+                "content_length": download_info['content_length'],
+                "message": "Be careful! This file could be malicious. It is recommended to scan it with QRX (https://github.com/vitalelele/QRX) or other tools before opening it on your machine."
+            }
+            self.control_results["download_info"] = download_warning
+            self.cleanup_uploaded_qr_files()
+            return self.control_results
+
         # if it's an action scheme we don't need to continue with the control
         action_scheme_result = self.checkActionScheme()
         if action_scheme_result:
@@ -785,4 +1021,17 @@ class QRScanner:
         None
         """
         self.urlCode = url
-        return
+        return  
+
+    def cleanup_uploaded_qr_files(self):
+        """
+        Deletes all the QR code files generated during the process.
+
+        Returns:
+            None
+        """
+        qr_generated_folder = "static/qr_generated" 
+        if os.path.exists(qr_generated_folder):
+            for file in os.listdir(qr_generated_folder):
+                file_path = os.path.join(qr_generated_folder, file)
+                os.remove(file_path)
