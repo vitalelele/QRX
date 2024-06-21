@@ -11,15 +11,14 @@ app = FastAPI(
     title="QRAPIX",
     description="API service for interacting with the QRX tool. It provides endpoints for scanning QR codes and generating QR codes.",
     version="1.0",
-    terms_of_service="http://example.com/terms/",
+    terms_of_service="https://github.com/vitalelele/QRX/",
     contact={
         "name": "Antonio Vitale",
-        "url": "http://example.com/contact/",
-        "email": "support@example.com",
+        "email": "vitaleleinfo@gmail.com",
     },
     license_info={
         "name": "MIT",
-        "url": "http://example.com/license/",
+        "url": "https://github.com/vitalelele/QRX/blob/main/LICENSE",
     },
 )
 
