@@ -39,6 +39,7 @@ class QRScanner:
         self.urlCode = None
         self.urlIpAddr = None
         self.log_file_path = "static/log/logError.txt"
+        self.is_download = False
         self.report_file_path = None
         self.report_data = []
         self.control_results = {}
@@ -157,6 +158,7 @@ class QRScanner:
 
         download_info = self.checkDownload()
         if download_info['is_download']:
+            self.is_download = True
             download_warning = f"{Style.BRIGHT}{Fore.RED} [!] WARNING: This QR code initiates a download. Proceed with extreme caution!{Style.RESET_ALL}"
             print(download_warning)
             print(f"     Filename: {Fore.CYAN}{download_info['filename']}{Style.RESET_ALL}")
@@ -224,7 +226,7 @@ class QRScanner:
                 elif malicious_count == 0:
                     print(f"{Style.BRIGHT}{Fore.GREEN} This file is considered safe.{Style.RESET_ALL}\n")
                 else:
-                    print(f"{Fore.YELLOW} [!] If the 'malicious' score is not zero, it means that some engines consider the file unsafe.{Style.RESET.ALL}\n")
+                    print(f"{Fore.YELLOW} [!] If the 'malicious' score is not zero, it means that some engines consider the file unsafe.{Style.RESET_ALL}\n")
 
                 self.generate_html_report("VirusTotal File Scan", True, f"""
                 <b>File Scan Results:</b><br>
@@ -343,18 +345,21 @@ class QRScanner:
                 report_message += f"<b><font color='red'>WARNING </font>: this site probably contains <font color='red'>{', '.join(considerations)}</font></b><br>"
             self.generate_html_report("IPQualityScore", ipQualityCheck, report_message)
 
-        print(f"\n{Style.BRIGHT}{Fore.YELLOW}URLscanIO Analysis:{Style.RESET_ALL}")
-        error_code, checkUrlScanIO = self.checkURLscanIO()
-        if error_code:
-            check_urlscanio_result = f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}"
-            print(check_urlscanio_result)
-            self.control_results["URLscanIO"] = "error"
-            self.generate_html_report("URLscanIO", False, "Error API, see the log file for further information.")
+        if not self.is_download:
+            print(f"\n{Style.BRIGHT}{Fore.YELLOW}URLscanIO Analysis:{Style.RESET_ALL}")
+            error_code, checkUrlScanIO = self.checkURLscanIO()
+            if error_code:
+                check_urlscanio_result = f"{Fore.RED} URLscanIO API: error, see the log file in static/log for further information{Style.RESET_ALL}"
+                print(check_urlscanio_result)
+                self.control_results["URLscanIO"] = "error"
+                self.generate_html_report("URLscanIO", False, "Error API, see the log file for further information.")
+            else:
+                check_urlscanio_result = f"{Style.BRIGHT} URLscanIO API: {Fore.GREEN}request success{Style.RESET_ALL}\n{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}"
+                print(check_urlscanio_result)
+                self.control_results["URLscanIO"] = checkUrlScanIO
+                self.generate_html_report("URLscanIO", True, f"Visit the <b><a href='{checkUrlScanIO}' target='_blank'>URLscanIO</b></a> website for further information.")
         else:
-            check_urlscanio_result = f"{Style.BRIGHT} URLscanIO API: {Fore.GREEN}request success{Style.RESET_ALL}\n{Style.BRIGHT}      For further information visit: {checkUrlScanIO}{Style.RESET_ALL}"
-            print(check_urlscanio_result)
-            self.control_results["URLscanIO"] = checkUrlScanIO
-            self.generate_html_report("URLscanIO", True, f"Visit the <b><a href='{checkUrlScanIO}' target='_blank'>URLscanIO</b></a> website for further information.")
+            print(f"{Fore.YELLOW} [!] {Style.RESET_ALL}URLscanIO analysis is not available for downloadable files.")
 
         print(f"\n{Style.BRIGHT}{Fore.YELLOW}AbuseIPDB Analysis:{Style.RESET_ALL}")
         error_code, checkAbuseIPDB_result = self.checkAbuseIPDB()
@@ -376,9 +381,9 @@ class QRScanner:
                 print(print_checkAbuseIPDB)
                 considerations = []
                 if checkAbuseIPDB_result.get('isTor', False):
-                    considerations.append(f"<font color='red'>utilizes the Tor network</font>")
+                    considerations.append(f"{Fore.RED}utilizes the Tor network{Style.RESET_ALL}")
                 if checkAbuseIPDB_result.get('totalReports', 0) > 0:
-                    considerations.append(f"<font color='red'>has received {checkAbuseIPDB_result['totalReports']} reports</font>")
+                    considerations.append(f"{Fore.RED}has received {checkAbuseIPDB_result['totalReports']} reports{Style.RESET_ALL}")
                 if considerations:
                     consideration_message = f"{Fore.YELLOW}[!]{Fore.RESET} This site {', '.join(considerations)}"
                     print(consideration_message)
@@ -537,62 +542,47 @@ class QRScanner:
             download_info.update({"error": str(e)})
         
         return download_info
-
-    def checkVirusTotal(self):
-        # Encode the URL using Base64, refer to the VirusTotal API documentation for more information
-        url_id = base64.urlsafe_b64encode(self.urlCode.encode()).decode().strip("=")
-
-        # Construct the URL for the VirusTotal API
-        url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
-        # Set the headers with the API key
-        headers = {
-            "accept": "application/json",
-            "x-apikey": self.api_manager.get_api_key('virustotal')
-        }
-
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            data = response.json()["data"]["attributes"]
-            # Filter relevant keys
-            relevant_keys = ["last_analysis_stats", "total_votes", "categories", "reputation", "last_http_response_code", "last_final_url"]
-            filtered_data = {key: data.get(key, "N/A") for key in relevant_keys}
-
-            # Check the analysis results
-            stats = data["last_analysis_stats"]
-            # Check if the URL is malicious
-            # 5 is the threshold for the number of engines that flagged the URL as malicious
-            is_malicious = stats["malicious"] > 0
-            return not is_malicious, False, filtered_data
-        else:
-            error_message = response.text
-            self.save_error_to_log("VirusTotal", error_message)
-            return False, True, None
-        
-    def checkIpQualityScore(self):
-        """
-        Checks the URL against the IpQualityScore API for malicious content.
-        Refer to the IpQualityScore API documentation for more information: https://www.ipqualityscore.com/documentation/malicious-url-scanner-api/overview
     
-        Returns:
-            bool: True if the URL is safe, False if it is flagged as malicious.
-            bool: True if there was an error while checking the URL with IpQualityScore, False otherwise.
-        """
-        # Parse the urlCode to be used in the API request
-        # e.g., https://www.ipqualityscore.com/api/json/url/your-api-key/https%3A%2F%2Fwww.google.com
-        url = 'https://www.ipqualityscore.com/api/json/url/%s/%s' % (self.api_manager.get_api_key("ipqualityscore"), urllib.parse.quote_plus(self.urlCode))
+    def checkVirusTotal(self):
+        try:
+            url_id = base64.urlsafe_b64encode(self.urlCode.encode()).decode().strip("=")
+            url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
+            headers = {
+                "accept": "application/json",
+                "x-apikey": self.api_manager.get_api_key('virustotal')
+            }
 
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            data = response.json()
-            if data["unsafe"] == False:
-                return True, False, data
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()["data"]["attributes"]
+                relevant_keys = ["last_analysis_stats", "total_votes", "categories", "reputation", "last_http_response_code", "last_final_url"]
+                filtered_data = {key: data.get(key, "N/A") for key in relevant_keys}
+                stats = data["last_analysis_stats"]
+                is_malicious = stats["malicious"] > 0
+                return (not is_malicious, False, filtered_data)
             else:
-                return False, False, data
-        else:
-            error_message = response.text
-            self.save_error_to_log("IpQualityScore", error_message)
-            return False, True, None
+                error_message = response.text
+                self.save_error_to_log("VirusTotal", error_message)
+                return (False, True, None)
+        except Exception as e:
+            self.save_error_to_log("VirusTotal", str(e))
+            return (False, True, None)
+    
+    def checkIpQualityScore(self):
+        try:
+            url = 'https://www.ipqualityscore.com/api/json/url/%s/%s' % (self.api_manager.get_api_key("ipqualityscore"), urllib.parse.quote_plus(self.urlCode))
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                data = response.json()
+                return (not data.get("unsafe", True), False, data)
+            else:
+                error_message = response.text
+                self.save_error_to_log("IpQualityScore", error_message)
+                return (False, True, None)
+        except Exception as e:
+            self.save_error_to_log("IpQualityScore", str(e))
+            return (False, True, None)
 
     def checkURLscanIO(self):
         """
@@ -618,7 +608,7 @@ class QRScanner:
         else:
             error_message = response.text
             self.save_error_to_log("URLscanIO", error_message)
-            return True
+            return True, None  # Return a tuple with an error indication and None
 
     def checkAbuseIPDB(self):
         """
@@ -747,7 +737,7 @@ class QRScanner:
         else:
             self.save_error_to_log("VirusTotal", response.text)
             return None
-
+    
     def urlScan_APIservice(self):
         """
         This method is used for making API calls.
@@ -770,28 +760,25 @@ class QRScanner:
                 "message": "Be careful! This file could be malicious. It is recommended to scan it with QRX (https://github.com/vitalelele/QRX) or other tools before opening it on your machine."
             }
             self.control_results["download_info"] = download_warning
-            self.cleanup_uploaded_qr_files()
+            self.cleanup_uploaded_qr_files()  # Pulisce i file temporanei
             return self.control_results
 
-        # if it's an action scheme we don't need to continue with the control
         action_scheme_result = self.checkActionScheme()
         if action_scheme_result:
             message = ("This QR code contains an action scheme."
-                       "No further analysis is required. Be careful when opening a scheme, it could open some external services")
-            self.control_results["action_scheme"] = {"result": action_scheme_result,
-                                                     "message": message}
+                    "No further analysis is required. Be careful when opening a scheme, it could open some external services")
+            self.control_results["action_scheme"] = {"result": action_scheme_result, "message": message}
             return
         else:
-            self.control_results["action_scheme"] = {"result": action_scheme_result,
-                                                     "message": "This QR code contains an action scheme." if action_scheme_result else "This QR code does not contain an action scheme."}
+            self.control_results["action_scheme"] = {"result": action_scheme_result, "message": "This QR code does not contain an action scheme."}
 
         self.control_results["short_url"] = self.checkShortUrl()
 
-        vt_result, vt_error = self.checkVirusTotal()
-        self.control_results["virus_total"] = {"result": vt_result, "error": vt_error}
+        vt_result, vt_error, vt_data = self.checkVirusTotal()
+        self.control_results["virus_total"] = {"result": vt_result, "error": vt_error, "data": vt_data}
 
-        ipqs_result, ipqs_error = self.checkIpQualityScore()
-        self.control_results["ip_quality_score"] = {"result": ipqs_result, "error": ipqs_error}
+        ipqs_result, ipqs_error, ipqs_data = self.checkIpQualityScore()
+        self.control_results["ip_quality_score"] = {"result": ipqs_result, "error": ipqs_error, "data": ipqs_data}
 
         urlscanio_error, urlscanio_result = self.checkURLscanIO()
         self.control_results["url_scan_io"] = {"result": urlscanio_result, "error": urlscanio_error}
@@ -802,8 +789,10 @@ class QRScanner:
         ip2location_error, ip2location_result = self.checkIp2Location()
         self.control_results["ip2_location"] = {"result": ip2location_result, "error": ip2location_error}
 
+        self.cleanup_uploaded_qr_files()  # Pulisce i file temporanei alla fine del processo
+
         return
-    
+
     def save_error_to_log(self, service_name, error_message):
         """
         Saves an error message to the log file for a specific service.
@@ -1026,8 +1015,11 @@ class QRScanner:
         Returns:
             None
         """
-        qr_generated_folder = "static/qr_generated" 
+        qr_generated_folder = "static/qr_generated"
         if os.path.exists(qr_generated_folder):
             for file in os.listdir(qr_generated_folder):
                 file_path = os.path.join(qr_generated_folder, file)
-                os.remove(file_path)
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    print(f"Error removing file {file_path}: {e}")

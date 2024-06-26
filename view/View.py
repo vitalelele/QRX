@@ -46,7 +46,7 @@ class View:
                     # Print an empty line after the banner
                     print()
                     # Print the developer info centered
-                    self.print_centered(f"{Style.BRIGHT}Developed by @vitalelele - 2024")
+                    self.print_centered(f"{Style.BRIGHT}Developed by @Antonio Vitale - 2024")
                 else:
                     self.print_centered(f"{Fore.RED}No banners found in the file.{Style.RESET_ALL}")
         except FileNotFoundError:
