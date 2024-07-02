@@ -1,5 +1,8 @@
 # 🚀 QRX - QReXamination 🔎🔬
 
+<div align="center">
+  <img src="https://github.com/vitalelele/QRX/assets/65810505/9076a6c0-9e0f-494c-9faa-8e2e9576a590" alt="Immagine QRX">
+</div>
 ## Overview
 Welcome to QRX - QReXamination, your trusty sidekick in the realm of QR codes! 🎉
 
