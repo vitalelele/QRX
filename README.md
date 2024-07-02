@@ -1,9 +1,11 @@
 # 🚀 QRX - QReXamination 🔎🔬
+  
+  <div align="center">
+    <img src="https://github.com/vitalelele/QRX/assets/65810505/9076a6c0-9e0f-494c-9faa-8e2e9576a590" alt="Immagine QRX">
+  </div>
 
-<div align="center">
-  <img src="https://github.com/vitalelele/QRX/assets/65810505/9076a6c0-9e0f-494c-9faa-8e2e9576a590" alt="Immagine QRX">
-</div>
 ## Overview
+
 Welcome to QRX - QReXamination, your trusty sidekick in the realm of QR codes! 🎉
 
 Ever wondered what lurks behind those seemingly innocent QR codes? With QRX, you're equipped to unveil the mysteries hidden within. Whether it's scrutinizing URLs, deciphering intricate schemes, or unraveling mysterious text, this tool is your go-to magician's wand for QR code analysis.
